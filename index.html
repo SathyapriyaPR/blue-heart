@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta
+        name="theme-color"
+        content="#8ECDF4"
+    >
+
+    <meta
+        name="description"
+        content="Blue Heart — a calm private school-day companion."
+    >
+
+    <!-- PWA -->
+    <link
+        rel="manifest"
+        href="./manifest.json"
+    >
+
+    <!-- iPhone / mobile PWA settings -->
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="default"
+    >
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="Blue Heart"
+    >
+
+    <title>
+        Blue Heart 🩵
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     LOCK SCREEN
+===================================================== -->
+
+<div
+    id="lockScreen"
+    class="lock-screen"
+>
+
+    <div class="lock-card">
+
+        <div class="brand-mark">
+            🩵
+        </div>
+
+        <p class="eyebrow">
+            YOUR PRIVATE SPACE
+        </p>
+
+        <h1>
+            Blue Heart
+        </h1>
+
+        <p
+            id="lockSubtitle"
+            class="muted"
+        >
+            Create a simple 4-digit PIN.
+        </p>
+
+
+        <form
+            id="pinForm"
+            class="pin-form"
+        >
+
+            <label for="pinInput">
+                PIN
+            </label>
+
+            <input
+                id="pinInput"
+                type="password"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                autocomplete="off"
+                minlength="4"
+                maxlength="4"
+                placeholder="••••"
+                required
+            >
+
+
+            <div
+                id="confirmPinWrap"
+                class="hidden"
+            >
+
+                <label for="confirmPin">
+                    Confirm PIN
+                </label>
+
+                <input
+                    id="confirmPin"
+                    type="password"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    autocomplete="off"
+                    minlength="4"
+                    maxlength="4"
+                    placeholder="••••"
+                >
+
+            </div>
+
+
+            <button
+                id="pinSubmit"
+                class="primary"
+                type="submit"
+            >
+                Create PIN
+            </button>
+
+
+            <p
+                id="lockError"
+                class="error-text"
+                aria-live="polite"
+            ></p>
+
+        </form>
+
+
+        <div class="security-note">
+
+            <strong>
+                Private on this device 🩵
+            </strong>
+
+            <br><br>
+
+            Blue Heart encrypts its saved data
+            before storing it in this browser.
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     MAIN APP
+===================================================== -->
+
+<div
+    id="app"
+    class="app hidden"
+>
+
+
+    <!-- HEADER -->
+
+    <header class="topbar">
+
+        <div>
+
+            <p class="eyebrow">
+                BLUE HEART
+            </p>
+
+            <h1>
+                Hello 🩵
+            </h1>
+
+            <p
+                id="todayDate"
+                class="muted"
+            ></p>
+
+        </div>
+
+
+        <button
+            id="lockButton"
+            class="icon-btn"
+            type="button"
+            aria-label="Lock Blue Heart"
+            title="Lock Blue Heart"
+        >
+            🔒
+        </button>
+
+    </header>
+
+
+
+    <main>
+
+
+        <!-- =================================================
+             TODAY
+        ================================================== -->
+
+        <section
+            id="view-today"
+            class="view active"
+        >
+
+
+            <div class="welcome-card">
+
+                <div>
+
+                    <p class="muted">
+                        One thing at a time.
+                    </p>
+
+                    <h2>
+                        What needs your attention?
+                    </h2>
+
+                    <p class="muted">
+                        You don't need to remember
+                        everything at once.
+                    </p>
+
+                </div>
+
+                <div class="leaf">
+                    ☁️
+                </div>
+
+            </div>
+
+
+
+            <!-- SUMMARY -->
+
+            <div class="summary-grid">
+
+
+                <button
+                    class="summary-card"
+                    data-go="students"
+                    type="button"
+                >
+
+                    <span class="summary-icon">
+                        🩵
+                    </span>
+
+                    <span
+                        id="studentCount"
+                        class="summary-number"
+                    >
+                        0
+                    </span>
+
+                    <span class="summary-label">
+                        Students
+                    </span>
+
+                </button>
+
+
+
+                <button
+                    class="summary-card"
+                    data-go="schedule"
+                    type="button"
+                >
+
+                    <span class="summary-icon">
+                        ☀️
+                    </span>
+
+                    <span
+                        id="todayCount"
+                        class="summary-number"
+                    >
+                        0
+                    </span>
+
+                    <span class="summary-label">
+                        Today
+                    </span>
+
+                </button>
+
+
+
+                <button
+                    class="summary-card"
+                    data-go="schedule"
+                    type="button"
+                >
+
+                    <span class="summary-icon">
+                        🔔
+                    </span>
+
+                    <span
+                        id="followupCount"
+                        class="summary-number"
+                    >
+                        0
+                    </span>
+
+                    <span class="summary-label">
+                        Follow-ups
+                    </span>
+
+                </button>
+
+            </div>
+
+
+
+            <!-- QUICK ACTIONS -->
+
+            <div class="quick-actions">
+
+                <button
+                    id="addStudentQuick"
+                    class="primary large"
+                    type="button"
+                >
+                    ＋ Add student
+                </button>
+
+
+                <button
+                    id="addSessionQuick"
+                    class="secondary large"
+                    type="button"
+                >
+                    ＋ Log session
+                </button>
+
+            </div>
+
+
+            <!--
+                QUICK CAPTURE
+
+                Your current script.js automatically
+                inserts Quick Capture here.
+            -->
+
+
+
+            <!-- NEEDS ATTENTION -->
+
+            <section class="card">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            TODAY
+                        </p>
+
+                        <h3>
+                            Needs attention
+                        </h3>
+
+                    </div>
+
+
+                    <button
+                        class="text-btn"
+                        data-go="schedule"
+                        type="button"
+                    >
+                        See all
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="todayList"
+                    class="today-list"
+                ></div>
+
+            </section>
+
+
+
+            <!-- SCHOOL APP -->
+
+            <section class="card">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            BEFORE YOU LEAVE
+                        </p>
+
+                        <h3>
+                            School work log
+                        </h3>
+
+                    </div>
+
+
+                    <span
+                        id="schoolLogPill"
+                        class="status-pill pending"
+                    >
+                        Pending
+                    </span>
+
+                </div>
+
+
+                <label class="check-row big-check">
+
+                    <input
+                        id="schoolLogCheckbox"
+                        type="checkbox"
+                    >
+
+                    <span>
+                        I've logged today's work
+                        in the school app
+                    </span>
+
+                </label>
+
+
+                <div class="reminder-box">
+
+                    <strong>
+                        ⏰ Gentle reminder
+                    </strong>
+
+                    <p class="muted">
+                        What time would you like to
+                        remember the school log?
+                    </p>
+
+
+                    <div class="inline-controls">
+
+                        <input
+                            id="schoolReminderTime"
+                            type="time"
+                            value="16:30"
+                            aria-label="School app reminder time"
+                        >
+
+                        <button
+                            id="saveSchoolReminder"
+                            class="secondary"
+                            type="button"
+                        >
+                            Save
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="button-row">
+
+                    <button
+                        id="notifyButton"
+                        class="secondary"
+                        type="button"
+                    >
+                        🔔 Notifications
+                    </button>
+
+
+                    <button
+                        id="schoolAppButton"
+                        class="secondary"
+                        type="button"
+                    >
+                        Open school app
+                    </button>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- END OF DAY -->
+
+            <section class="card">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            END OF DAY
+                        </p>
+
+                        <h3>
+                            You're almost done
+                        </h3>
+
+                    </div>
+
+
+                    <span
+                        id="checklistProgress"
+                        class="pill"
+                    >
+                        0/3
+                    </span>
+
+                </div>
+
+
+                <div
+                    id="schoolChecklist"
+                    class="check-list"
+                ></div>
+
+            </section>
+
+        </section>
+
+
+
+        <!-- =================================================
+             STUDENTS
+        ================================================== -->
+
+        <section
+            id="view-students"
+            class="view"
+        >
+
+            <div class="page-title-row">
+
+                <div>
+
+                    <p class="eyebrow">
+                        SCHOOL
+                    </p>
+
+                    <h2>
+                        Students
+                    </h2>
+
+                    <p class="muted">
+                        Find what you need without
+                        going through a register.
+                    </p>
+
+                </div>
+
+
+                <button
+                    id="addStudentButton"
+                    class="primary small"
+                    type="button"
+                >
+                    ＋ Add
+                </button>
+
+            </div>
+
+
+
+            <div class="search-box">
+
+                <span>
+                    🔎
+                </span>
+
+                <input
+                    id="studentSearch"
+                    type="search"
+                    placeholder="Search students..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div
+                id="studentList"
+                class="student-list"
+            ></div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             NEXT / FOLLOW-UPS
+        ================================================== -->
+
+        <section
+            id="view-schedule"
+            class="view"
+        >
+
+            <div class="page-title-row">
+
+                <div>
+
+                    <p class="eyebrow">
+                        WHAT'S NEXT
+                    </p>
+
+                    <h2>
+                        Follow-ups
+                    </h2>
+
+                    <p class="muted">
+                        Only the things that need
+                        your attention.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="scheduleList"
+                class="schedule-list"
+            ></div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             PERSONAL
+        ================================================== -->
+
+        <section
+            id="view-personal"
+            class="view"
+        >
+
+            <div class="page-title-row">
+
+                <div>
+
+                    <p class="eyebrow">
+                        FOR YOU
+                    </p>
+
+                    <h2>
+                        Personal care 🌿
+                    </h2>
+
+                    <p class="muted">
+                        Small things are easier when
+                        they don't have to live in
+                        your head.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- DAILY -->
+
+            <section class="card">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            TODAY
+                        </p>
+
+                        <h3>
+                            Daily reminders
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="personalList"
+                    class="personal-list"
+                ></div>
+
+            </section>
+
+
+
+            <!-- GROCERIES -->
+
+            <section class="card">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            THIS WEEK
+                        </p>
+
+                        <h3>
+                            Fruits & vegetables
+                        </h3>
+
+                    </div>
+
+
+                    <button
+                        id="resetGroceries"
+                        class="text-btn"
+                        type="button"
+                    >
+                        Reset
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="groceryList"
+                    class="grocery-list"
+                ></div>
+
+
+                <div class="add-item-row">
+
+                    <input
+                        id="newGrocery"
+                        type="text"
+                        maxlength="50"
+                        placeholder="Add something..."
+                    >
+
+
+                    <button
+                        id="addGrocery"
+                        class="primary small"
+                        type="button"
+                    >
+                        Add
+                    </button>
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+
+        <!-- =================================================
+             SETTINGS
+        ================================================== -->
+
+        <section
+            id="view-settings"
+            class="view"
+        >
+
+            <div class="page-title-row">
+
+                <div>
+
+                    <p class="eyebrow">
+                        BLUE HEART
+                    </p>
+
+                    <h2>
+                        Settings
+                    </h2>
+
+                    <p class="muted">
+                        Security, backups and
+                        school-app settings.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- SECURITY -->
+
+            <section class="card">
+
+                <p class="eyebrow">
+                    SECURITY
+                </p>
+
+                <h3>
+                    🔐 Your PIN
+                </h3>
+
+                <p class="muted">
+                    Blue Heart uses a simple
+                    four-digit PIN.
+                </p>
+
+
+                <button
+                    id="changePinButton"
+                    class="secondary full"
+                    type="button"
+                >
+                    Change PIN
+                </button>
+
+            </section>
+
+
+
+            <!-- BACKUP -->
+
+            <section class="card">
+
+                <p class="eyebrow">
+                    DON'T LOSE YOUR DATA
+                </p>
+
+                <h3>
+                    ☁️ Encrypted backup
+                </h3>
+
+                <p class="muted">
+                    Export a backup occasionally.
+                    The student information inside
+                    the backup remains encrypted.
+                </p>
+
+
+                <div class="button-row">
+
+                    <button
+                        id="exportBackup"
+                        class="secondary"
+                        type="button"
+                    >
+                        ↓ Export backup
+                    </button>
+
+
+                    <button
+                        id="importBackupButton"
+                        class="secondary"
+                        type="button"
+                    >
+                        ↑ Restore
+                    </button>
+
+                </div>
+
+
+                <input
+                    id="importBackup"
+                    type="file"
+                    accept="application/json,.json"
+                    class="hidden"
+                >
+
+            </section>
+
+
+
+            <!-- SCHOOL APP -->
+
+            <section class="card">
+
+                <p class="eyebrow">
+                    SCHOOL
+                </p>
+
+                <h3>
+                    School app
+                </h3>
+
+                <p class="muted">
+                    Add the school's approved
+                    system here so Blue Heart
+                    can open it quickly.
+                </p>
+
+
+                <label class="field-label">
+
+                    School app address
+
+                    <input
+                        id="schoolAppUrl"
+                        type="url"
+                        inputmode="url"
+                        placeholder="https://..."
+                    >
+
+                </label>
+
+
+                <button
+                    id="saveSchoolUrl"
+                    class="primary full"
+                    type="button"
+                >
+                    Save
+                </button>
+
+            </section>
+
+
+
+            <!-- ABOUT -->
+
+            <section class="card">
+
+                <p class="eyebrow">
+                    ABOUT
+                </p>
+
+                <h3>
+                    🩵 Blue Heart
+                </h3>
+
+                <p class="muted">
+                    A calm personal companion for
+                    keeping school-day tasks,
+                    follow-ups and everyday reminders
+                    in one place.
+                </p>
+
+                <p class="muted">
+                    Student information should still
+                    be handled according to the
+                    school's privacy and record
+                    policies.
+                </p>
+
+            </section>
+
+
+
+            <!-- DANGER -->
+
+            <section class="card danger-card">
+
+                <p class="eyebrow">
+                    DANGER ZONE
+                </p>
+
+                <h3>
+                    Delete Blue Heart data
+                </h3>
+
+                <p class="muted">
+                    This removes the local Blue Heart
+                    data from this browser.
+                    Export a backup first.
+                </p>
+
+
+                <button
+                    id="deleteAllButton"
+                    class="danger full"
+                    type="button"
+                >
+                    Delete everything
+                </button>
+
+            </section>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- =================================================
+         BOTTOM NAVIGATION
+    ================================================== -->
+
+    <nav
+        class="bottom-nav"
+        aria-label="Main navigation"
+    >
+
+
+        <button
+            class="nav-item active"
+            data-go="today"
+            type="button"
+        >
+            <span>🏠</span>
+            <small>Home</small>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-go="students"
+            type="button"
+        >
+            <span>🩵</span>
+            <small>Students</small>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-go="schedule"
+            type="button"
+        >
+            <span>🔔</span>
+            <small>Next</small>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-go="personal"
+            type="button"
+        >
+            <span>🌿</span>
+            <small>Me</small>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-go="settings"
+            type="button"
+        >
+            <span>⚙️</span>
+            <small>Settings</small>
+        </button>
+
+    </nav>
+
+</div>
+
+
+
+<!-- =====================================================
+     ADD / EDIT STUDENT
+===================================================== -->
+
+<div
+    id="studentModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+>
+
+    <div class="modal-card">
+
+        <button
+            class="close-btn"
+            data-close-modal="studentModal"
+            type="button"
+            aria-label="Close"
+        >
+            ×
+        </button>
+
+
+        <p class="eyebrow">
+            STUDENT
+        </p>
+
+        <h2 id="studentModalTitle">
+            Add student
+        </h2>
+
+
+        <form
+            id="studentForm"
+            class="form-grid"
+        >
+
+            <input
+                id="studentEditId"
+                type="hidden"
+            >
+
+
+            <label>
+
+                Name
+
+                <input
+                    id="studentName"
+                    required
+                    maxlength="80"
+                    autocomplete="off"
+                    placeholder="Student name"
+                >
+
+            </label>
+
+
+            <div class="two-col">
+
+                <label>
+
+                    Class
+
+                    <input
+                        id="studentClass"
+                        maxlength="30"
+                        autocomplete="off"
+                        placeholder="8A"
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Student ID
+
+                    <input
+                        id="studentId"
+                        maxlength="40"
+                        autocomplete="off"
+                        placeholder="Optional"
+                    >
+
+                </label>
+
+            </div>
+
+
+            <div class="two-col">
+
+                <label>
+
+                    Area
+
+                    <select id="studentCategory">
+
+                        <option value="Academic">
+                            Academic
+                        </option>
+
+                        <option value="Social">
+                            Social
+                        </option>
+
+                        <option value="Emotional">
+                            Emotional
+                        </option>
+
+                        <option value="Behaviour">
+                            Behaviour
+                        </option>
+
+                        <option value="Family">
+                            Family
+                        </option>
+
+                        <option value="Other">
+                            Other
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label>
+
+                    Attention
+
+                    <select id="studentPriority">
+
+                        <option value="yellow">
+                            🟡 Follow-up
+                        </option>
+
+                        <option value="red">
+                            🔴 Urgent
+                        </option>
+
+                        <option value="green">
+                            🟢 Routine
+                        </option>
+
+                    </select>
+
+                </label>
+
+            </div>
+
+
+            <label>
+
+                Working note
+
+                <textarea
+                    id="studentNotes"
+                    rows="4"
+                    maxlength="2000"
+                    placeholder="Short factual reminder..."
+                ></textarea>
+
+            </label>
+
+
+            <button
+                class="primary"
+                type="submit"
+            >
+                Save student
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     STUDENT DETAILS
+===================================================== -->
+
+<div
+    id="studentDetailModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+>
+
+    <div class="modal-card wide-modal">
+
+        <button
+            class="close-btn"
+            data-close-modal="studentDetailModal"
+            type="button"
+            aria-label="Close"
+        >
+            ×
+        </button>
+
+
+        <div id="studentDetail"></div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     SESSION
+===================================================== -->
+
+<div
+    id="sessionModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+>
+
+    <div class="modal-card">
+
+        <button
+            class="close-btn"
+            data-close-modal="sessionModal"
+            type="button"
+            aria-label="Close"
+        >
+            ×
+        </button>
+
+
+        <p class="eyebrow">
+            SESSION
+        </p>
+
+        <h2>
+            Log session
+        </h2>
+
+        <p class="muted">
+            Keep it brief. You can always
+            return later.
+        </p>
+
+
+        <form
+            id="sessionForm"
+            class="form-grid"
+        >
+
+            <label>
+
+                Student
+
+                <select
+                    id="sessionStudentSelect"
+                    required
+                ></select>
+
+            </label>
+
+
+            <label>
+
+                Date
+
+                <input
+                    id="sessionDate"
+                    type="date"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+
+                What happened?
+
+                <textarea
+                    id="sessionSummary"
+                    rows="5"
+                    maxlength="3000"
+                    placeholder="Brief factual summary..."
+                ></textarea>
+
+            </label>
+
+
+            <label>
+
+                What happens next?
+
+                <textarea
+                    id="sessionNextAction"
+                    rows="3"
+                    maxlength="1000"
+                    placeholder="Optional next step..."
+                ></textarea>
+
+            </label>
+
+
+            <button
+                class="primary"
+                type="submit"
+            >
+                Save session
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     FOLLOW-UP
+===================================================== -->
+
+<div
+    id="followupModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+>
+
+    <div class="modal-card">
+
+        <button
+            class="close-btn"
+            data-close-modal="followupModal"
+            type="button"
+            aria-label="Close"
+        >
+            ×
+        </button>
+
+
+        <p class="eyebrow">
+            FOLLOW-UP
+        </p>
+
+        <h2>
+            Remember this later
+        </h2>
+
+
+        <form
+            id="followupForm"
+            class="form-grid"
+        >
+
+            <label>
+
+                Student
+
+                <select
+                    id="followupStudentSelect"
+                    required
+                ></select>
+
+            </label>
+
+
+            <label>
+
+                When?
+
+                <input
+                    id="followupDate"
+                    type="date"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+
+                Priority
+
+                <select id="followupPriority">
+
+                    <option value="yellow">
+                        🟡 Follow-up
+                    </option>
+
+                    <option value="red">
+                        🔴 Urgent
+                    </option>
+
+                    <option value="green">
+                        🟢 Routine
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <label>
+
+                What needs to happen?
+
+                <input
+                    id="followupAction"
+                    maxlength="160"
+                    required
+                    autocomplete="off"
+                    placeholder="Check in, call parent..."
+                >
+
+            </label>
+
+
+            <label>
+
+                Optional note
+
+                <textarea
+                    id="followupNote"
+                    rows="3"
+                    maxlength="1000"
+                    placeholder="Anything useful for later..."
+                ></textarea>
+
+            </label>
+
+
+            <button
+                class="primary"
+                type="submit"
+            >
+                Save follow-up
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     CHANGE PIN
+===================================================== -->
+
+<div
+    id="pinModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+>
+
+    <div class="modal-card">
+
+        <button
+            class="close-btn"
+            data-close-modal="pinModal"
+            type="button"
+            aria-label="Close"
+        >
+            ×
+        </button>
+
+
+        <p class="eyebrow">
+            SECURITY
+        </p>
+
+        <h2>
+            Change PIN
+        </h2>
+
+
+        <form
+            id="changePinForm"
+            class="form-grid"
+        >
+
+            <label>
+
+                Current PIN
+
+                <input
+                    id="currentPin"
+                    type="password"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    minlength="4"
+                    maxlength="4"
+                    autocomplete="off"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+
+                New 4-digit PIN
+
+                <input
+                    id="newPin"
+                    type="password"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    minlength="4"
+                    maxlength="4"
+                    autocomplete="off"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+
+                Enter it again
+
+                <input
+                    id="confirmNewPin"
+                    type="password"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    minlength="4"
+                    maxlength="4"
+                    autocomplete="off"
+                    required
+                >
+
+            </label>
+
+
+            <button
+                class="primary"
+                type="submit"
+            >
+                Change PIN
+            </button>
+
+
+            <p
+                id="changePinError"
+                class="error-text"
+                aria-live="polite"
+            ></p>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     TOAST
+===================================================== -->
+
+<div
+    id="toast"
+    class="toast"
+    role="status"
+    aria-live="polite"
+></div>
+
+
+
+<!-- =====================================================
+     BLUE HEART JAVASCRIPT
+===================================================== -->
+
+<script
+    src="./script.js"
+    defer
+></script>
+
+
+
+<!-- =====================================================
+     PWA SERVICE WORKER
+===================================================== -->
+
+<script>
+
+    if ("serviceWorker" in navigator) {
+
+        window.addEventListener(
+            "load",
+            () => {
+
+                navigator.serviceWorker
+                    .register("./service-worker.js")
+
+                    .then(
+                        registration => {
+
+                            console.log(
+                                "Blue Heart PWA ready 🩵",
+                                registration.scope
+                            );
+
+                        }
+                    )
+
+                    .catch(
+                        error => {
+
+                            console.error(
+                                "Blue Heart service worker failed:",
+                                error
+                            );
+
+                        }
+                    );
+
+            }
+        );
+
+    }
+
+</script>
+
+
+</body>
+
+</html>
