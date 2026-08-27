@@ -1,92 +1,30 @@
-const CACHE_NAME =
-    "blue-heart-v5";
+{
+    "name": "Blue Heart",
+    "short_name": "Blue Heart",
+    "description": "A calm private school-day companion.",
 
-const FILES_TO_CACHE = [
-    "./",
-    "./index.html",
-    "./style.css",
-    "./script.js",
-    "./timetable.js",
-    "./manifest.json",
-    "./icon/icon-192.png",
-    "./icon/icon-512.png"
-];
+    "start_url": "./",
+    "scope": "./",
 
-self.addEventListener(
-    "install",
-    event => {
+    "display": "standalone",
 
-        event.waitUntil(
-            caches
-                .open(CACHE_NAME)
-                .then(
-                    cache =>
-                        cache.addAll(
-                            FILES_TO_CACHE
-                        )
-                )
-        );
+    "background_color": "#F6FBFE",
+    "theme_color": "#8ECDF4",
 
-        self.skipWaiting();
-    }
-);
+    "orientation": "portrait-primary",
 
-
-self.addEventListener(
-    "activate",
-    event => {
-
-        event.waitUntil(
-            caches
-                .keys()
-                .then(
-                    keys =>
-                        Promise.all(
-                            keys
-                                .filter(
-                                    key =>
-                                        key !== CACHE_NAME
-                                )
-                                .map(
-                                    key =>
-                                        caches.delete(key)
-                                )
-                        )
-                )
-        );
-
-        self.clients.claim();
-    }
-);
-
-
-self.addEventListener(
-    "fetch",
-    event => {
-
-        if (
-            event.request.method !== "GET"
-        ) {
-            return;
+    "icons": [
+        {
+            "src": "./icon/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "./icon/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
         }
-
-        event.respondWith(
-            caches
-                .match(
-                    event.request
-                )
-                .then(
-                    cached => {
-
-                        if (cached) {
-                            return cached;
-                        }
-
-                        return fetch(
-                            event.request
-                        );
-                    }
-                )
-        );
-    }
-);
+    ]
+}
