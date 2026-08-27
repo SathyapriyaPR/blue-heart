@@ -26,7 +26,7 @@
         href="./manifest.json"
     >
 
-    <!-- iPhone / mobile PWA settings -->
+    <!-- Mobile PWA -->
     <meta
         name="apple-mobile-web-app-capable"
         content="yes"
@@ -228,7 +228,6 @@
             class="view active"
         >
 
-
             <div class="welcome-card">
 
                 <div>
@@ -362,16 +361,8 @@
             </div>
 
 
-            <!--
-                QUICK CAPTURE
 
-                Your current script.js automatically
-                inserts Quick Capture here.
-            -->
-
-
-
-            <!-- NEEDS ATTENTION -->
+            <!-- TODAY'S FOLLOW-UPS -->
 
             <section class="card">
 
@@ -405,6 +396,49 @@
                     id="todayList"
                     class="today-list"
                 ></div>
+
+            </section>
+
+
+
+            <!-- COUNSELLING SLOTS SHORTCUT -->
+
+            <section class="card">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            SCHOOL
+                        </p>
+
+                        <h3>
+                            Counselling availability
+                        </h3>
+
+                    </div>
+
+                    <span>
+                        📘
+                    </span>
+
+                </div>
+
+
+                <p class="muted">
+                    Check which classes are available
+                    during each school period.
+                </p>
+
+
+                <button
+                    class="secondary full"
+                    data-go="slots"
+                    type="button"
+                >
+                    View today's slots
+                </button>
 
             </section>
 
@@ -461,8 +495,8 @@
                     </strong>
 
                     <p class="muted">
-                        What time would you like to
-                        remember the school log?
+                        Choose when Blue Heart should
+                        remind you about the school log.
                     </p>
 
 
@@ -620,6 +654,139 @@
 
 
         <!-- =================================================
+             V5 — COUNSELLING SLOTS
+        ================================================== -->
+
+        <section
+            id="view-slots"
+            class="view"
+        >
+
+            <div class="page-title-row">
+
+                <div>
+
+                    <p class="eyebrow">
+                        SCHOOL TIMETABLE
+                    </p>
+
+                    <h2>
+                        Counselling slots 📘
+                    </h2>
+
+                    <p class="muted">
+                        See which classes can be called
+                        during each period.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- DAY SELECTOR -->
+
+            <div
+                id="slotDayButtons"
+                class="slot-day-buttons"
+            ></div>
+
+
+
+            <!-- PERIODS -->
+
+            <section class="card">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            SELECTED DAY
+                        </p>
+
+                        <h3
+                            id="slotDayTitle"
+                        >
+                            Today
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="slotPeriodList"
+                    class="slot-period-list"
+                ></div>
+
+            </section>
+
+
+
+            <!-- MATCHED STUDENTS -->
+
+            <section class="card">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            BLUE HEART STUDENTS
+                        </p>
+
+                        <h3>
+                            Students matching these slots
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+                <p class="muted">
+                    Blue Heart compares each student's
+                    saved class with the counselling
+                    timetable.
+                </p>
+
+
+                <div
+                    id="slotStudentMatches"
+                ></div>
+
+            </section>
+
+
+
+            <!-- IMPORTANT RULE -->
+
+            <section class="card">
+
+                <p class="eyebrow">
+                    REMEMBER
+                </p>
+
+                <h3>
+                    🩵 Use the student's own class
+                </h3>
+
+                <p class="muted">
+                    A student should be called only
+                    when their own class is available
+                    during that period.
+                </p>
+
+            </section>
+
+        </section>
+
+
+
+        <!-- =================================================
              NEXT / FOLLOW-UPS
         ================================================== -->
 
@@ -682,7 +849,7 @@
 
                     <p class="muted">
                         Small things are easier when
-                        they don't have to live in
+                        they don't have to stay in
                         your head.
                     </p>
 
@@ -806,8 +973,8 @@
                     </h2>
 
                     <p class="muted">
-                        Security, backups and
-                        school-app settings.
+                        Security, reminders, backups
+                        and school-app settings.
                     </p>
 
                 </div>
@@ -846,6 +1013,10 @@
 
 
 
+            <!-- REMINDER CENTER GETS INSERTED HERE BY SCRIPT.JS -->
+
+
+
             <!-- BACKUP -->
 
             <section class="card">
@@ -860,8 +1031,8 @@
 
                 <p class="muted">
                     Export a backup occasionally.
-                    The student information inside
-                    the backup remains encrypted.
+                    The information inside remains
+                    encrypted.
                 </p>
 
 
@@ -952,21 +1123,13 @@
                 </p>
 
                 <h3>
-                    🩵 Blue Heart
+                    🩵 Blue Heart V5
                 </h3>
 
                 <p class="muted">
                     A calm personal companion for
-                    keeping school-day tasks,
-                    follow-ups and everyday reminders
-                    in one place.
-                </p>
-
-                <p class="muted">
-                    Student information should still
-                    be handled according to the
-                    school's privacy and record
-                    policies.
+                    student follow-ups, counselling
+                    availability and everyday reminders.
                 </p>
 
             </section>
@@ -1040,6 +1203,16 @@
 
         <button
             class="nav-item"
+            data-go="slots"
+            type="button"
+        >
+            <span>📘</span>
+            <small>Slots</small>
+        </button>
+
+
+        <button
+            class="nav-item"
             data-go="schedule"
             type="button"
         >
@@ -1100,6 +1273,7 @@
             STUDENT
         </p>
 
+
         <h2 id="studentModalTitle">
             Add student
         </h2>
@@ -1131,6 +1305,7 @@
             </label>
 
 
+
             <div class="two-col">
 
                 <label>
@@ -1141,7 +1316,7 @@
                         id="studentClass"
                         maxlength="30"
                         autocomplete="off"
-                        placeholder="8A"
+                        placeholder="Example: 8B"
                     >
 
                 </label>
@@ -1161,6 +1336,7 @@
                 </label>
 
             </div>
+
 
 
             <div class="two-col">
@@ -1223,6 +1399,7 @@
                 </label>
 
             </div>
+
 
 
             <label>
@@ -1317,8 +1494,7 @@
         </h2>
 
         <p class="muted">
-            Keep it brief. You can always
-            return later.
+            Keep it brief. You can return later.
         </p>
 
 
@@ -1651,7 +1827,19 @@
 
 
 <!-- =====================================================
-     BLUE HEART JAVASCRIPT
+     V5 TIMETABLE DATABASE
+     MUST LOAD BEFORE SCRIPT.JS
+===================================================== -->
+
+<script
+    src="./timetable.js"
+    defer
+></script>
+
+
+
+<!-- =====================================================
+     MAIN BLUE HEART JAVASCRIPT
 ===================================================== -->
 
 <script
@@ -1667,14 +1855,20 @@
 
 <script>
 
-    if ("serviceWorker" in navigator) {
+    if (
+        "serviceWorker"
+        in navigator
+    ) {
 
         window.addEventListener(
             "load",
             () => {
 
-                navigator.serviceWorker
-                    .register("./service-worker.js")
+                navigator
+                    .serviceWorker
+                    .register(
+                        "./service-worker.js"
+                    )
 
                     .then(
                         registration => {
