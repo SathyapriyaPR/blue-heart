@@ -2312,3 +2312,342 @@ textarea {
     }
 
 }
+/* =========================================================
+   BLUE HEART V5
+   COUNSELLING SLOTS + 6-ITEM MOBILE NAV
+========================================================= */
+
+
+/* =========================================================
+   BOTTOM NAVIGATION — SIX ITEMS
+========================================================= */
+
+.bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2px;
+}
+
+.bottom-nav .nav-item {
+    min-width: 0;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.bottom-nav .nav-item span {
+    font-size: 1.15rem;
+}
+
+.bottom-nav .nav-item small {
+    font-size: 0.7rem;
+}
+
+
+/* =========================================================
+   SLOT DAY BUTTONS
+========================================================= */
+
+.slot-day-buttons {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 2px 14px;
+    margin-bottom: 4px;
+    scrollbar-width: none;
+}
+
+.slot-day-buttons::-webkit-scrollbar {
+    display: none;
+}
+
+.slot-day-btn {
+    flex: 0 0 auto;
+    min-width: 58px;
+    border: 1px solid #c9e7f6;
+    background: #ffffff;
+    color: #52758a;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        background 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.slot-day-btn:hover {
+    transform: translateY(-1px);
+}
+
+.slot-day-btn.active {
+    background: #a9ddf7;
+    color: #21485e;
+    border-color: #a9ddf7;
+}
+
+
+/* =========================================================
+   SLOT PERIOD LIST
+========================================================= */
+
+.slot-period-list {
+    display: grid;
+    gap: 12px;
+}
+
+.slot-card {
+    background: #f8fcff;
+    border: 1px solid #d9eef8;
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow:
+        0 4px 12px
+        rgba(70, 135, 170, 0.05);
+}
+
+
+/* =========================================================
+   SLOT HEADER
+========================================================= */
+
+.slot-period-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.slot-period-head > div {
+    display: grid;
+    gap: 3px;
+}
+
+.slot-period-head strong {
+    font-size: 1rem;
+    color: #234b60;
+}
+
+
+/* =========================================================
+   SLOT MATCH COUNT
+========================================================= */
+
+.slot-match-pill {
+    background: #f2e5d5;
+    color: #74593f;
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   CLASS PILLS
+========================================================= */
+
+.slot-class-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.slot-class-pill {
+    background: #eaf7fd;
+    border: 1px solid #cae9f8;
+    color: #386277;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   MATCHED STUDENTS INSIDE EACH PERIOD
+========================================================= */
+
+.slot-matched-students {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.slot-student {
+    width: 100%;
+    border: 1px solid #e2edf2;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 11px 12px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+
+    text-align: left;
+    cursor: pointer;
+}
+
+.slot-student span {
+    font-weight: 700;
+    color: #314e5c;
+}
+
+.slot-student small {
+    color: #7a8a92;
+}
+
+
+/* =========================================================
+   MATCHED STUDENT SUMMARY
+========================================================= */
+
+.slot-student-summary {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #e0edf3;
+    border-radius: 15px;
+    padding: 12px 13px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    text-align: left;
+    margin-top: 8px;
+    cursor: pointer;
+}
+
+.slot-student-summary strong {
+    color: #314f5f;
+}
+
+.slot-student-summary p {
+    margin: 3px 0 0;
+}
+
+.slot-time-right {
+    display: grid;
+    text-align: right;
+    gap: 2px;
+    flex: 0 0 auto;
+}
+
+.slot-time-right strong {
+    color: #4d6f80;
+}
+
+.slot-time-right small {
+    color: #7d9099;
+    font-size: 0.75rem;
+}
+
+
+/* =========================================================
+   STUDENT DETAIL SLOT BLOCK
+========================================================= */
+
+.detail-block {
+    margin-top: 18px;
+}
+
+.detail-block .mini-record {
+    background: #f8fcff;
+    border: 1px solid #e0eef5;
+    border-radius: 14px;
+    padding: 11px 12px;
+    margin-top: 8px;
+}
+
+.detail-block .mini-record strong {
+    color: #355b6e;
+}
+
+
+/* =========================================================
+   EMPTY SLOT STATE
+========================================================= */
+
+#slotStudentMatches .empty-state {
+    padding: 16px 8px;
+}
+
+
+/* =========================================================
+   SMALL MOBILE ADJUSTMENTS
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .bottom-nav {
+        grid-template-columns: repeat(6, 1fr);
+    }
+
+    .bottom-nav .nav-item {
+        padding:
+            8px 2px
+            calc(8px + env(safe-area-inset-bottom));
+    }
+
+    .bottom-nav .nav-item span {
+        font-size: 1.05rem;
+    }
+
+    .bottom-nav .nav-item small {
+        font-size: 0.62rem;
+    }
+
+    .slot-day-btn {
+        min-width: 54px;
+        padding: 9px 11px;
+    }
+
+    .slot-card {
+        padding: 12px;
+    }
+
+    .slot-period-head {
+        align-items: center;
+    }
+
+    .slot-match-pill {
+        font-size: 0.68rem;
+        padding: 5px 8px;
+    }
+
+    .slot-student-summary {
+        align-items: flex-start;
+    }
+
+    .slot-time-right {
+        max-width: 120px;
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL PHONE
+========================================================= */
+
+@media (max-width: 390px) {
+
+    .bottom-nav .nav-item small {
+        font-size: 0.58rem;
+    }
+
+    .bottom-nav .nav-item span {
+        font-size: 1rem;
+    }
+
+    .slot-class-pill {
+        font-size: 0.76rem;
+    }
+
+}
