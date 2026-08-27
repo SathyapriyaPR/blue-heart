@@ -1,15 +1,16 @@
-const CACHE_NAME = "blue-heart-v2";
+const CACHE_NAME =
+    "blue-heart-v5";
 
 const FILES_TO_CACHE = [
     "./",
     "./index.html",
     "./style.css",
     "./script.js",
+    "./timetable.js",
     "./manifest.json",
     "./icon/icon-192.png",
     "./icon/icon-512.png"
 ];
-
 
 self.addEventListener(
     "install",
