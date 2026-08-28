@@ -1,5 +1,4 @@
-const CACHE_NAME =
-    "blue-heart-v6";
+const CACHE_NAME = "blue-heart-v6";
 
 const FILES_TO_CACHE = [
     "./",
@@ -7,7 +6,6 @@ const FILES_TO_CACHE = [
     "./style.css",
     "./script.js",
     "./timetable.js",
-    "./firebase-messaging.js",
     "./manifest.json",
     "./icon/icon-192.png",
     "./icon/icon-512.png"
@@ -15,52 +13,7 @@ const FILES_TO_CACHE = [
 
 
 /* =========================================================
-   NOTIFICATION CLICK
-========================================================= */
-
-self.addEventListener(
-    "notificationclick",
-    event => {
-
-        event.notification.close();
-
-        const targetUrl =
-            event.notification?.data?.url ||
-            "./";
-
-        event.waitUntil(
-            clients
-                .matchAll({
-                    type: "window",
-                    includeUncontrolled: true
-                })
-                .then(windowClients => {
-
-                    for (const client of windowClients) {
-
-                        if ("focus" in client) {
-
-                            client.focus();
-
-                            if ("navigate" in client) {
-                                client.navigate(targetUrl);
-                            }
-
-                            return;
-                        }
-                    }
-
-                    if (clients.openWindow) {
-                        return clients.openWindow(targetUrl);
-                    }
-                })
-        );
-    }
-);
-
-
-/* =========================================================
-   FIREBASE MESSAGING
+   FIREBASE
 ========================================================= */
 
 importScripts(
@@ -100,37 +53,28 @@ const messaging =
 
 
 /* =========================================================
-   BACKGROUND PUSH
+   BACKGROUND NOTIFICATIONS
 ========================================================= */
 
 messaging.onBackgroundMessage(
     payload => {
 
         console.log(
-            "Blue Heart background push:",
+            "Blue Heart push:",
             payload
         );
 
-
-        const notification =
-            payload.notification || {};
-
-
-        const data =
-            payload.data || {};
-
-
         const title =
-            notification.title ||
-            data.title ||
+            payload.notification?.title ||
+            payload.data?.title ||
             "Blue Heart 🩵";
 
 
         const options = {
 
             body:
-                notification.body ||
-                data.body ||
+                payload.notification?.body ||
+                payload.data?.body ||
                 "You have a reminder.",
 
             icon:
@@ -139,26 +83,19 @@ messaging.onBackgroundMessage(
             badge:
                 "./icon/icon-192.png",
 
-            tag:
-                data.tag ||
-                "blue-heart-reminder",
-
-            renotify:
-                true,
-
             data: {
                 url:
-                    data.url ||
+                    payload.data?.url ||
                     "./"
             }
+
         };
 
 
-        return self.registration
-            .showNotification(
-                title,
-                options
-            );
+        return self.registration.showNotification(
+            title,
+            options
+        );
     }
 );
 
@@ -175,9 +112,7 @@ self.addEventListener(
             caches
                 .open(CACHE_NAME)
                 .then(cache =>
-                    cache.addAll(
-                        FILES_TO_CACHE
-                    )
+                    cache.addAll(FILES_TO_CACHE)
                 )
         );
 
@@ -231,22 +166,37 @@ self.addEventListener(
             return;
         }
 
-
         event.respondWith(
             caches
-                .match(
-                    event.request
-                )
+                .match(event.request)
                 .then(cached => {
 
                     if (cached) {
                         return cached;
                     }
 
-                    return fetch(
-                        event.request
-                    );
+                    return fetch(event.request);
                 })
+        );
+    }
+);
+
+
+/* =========================================================
+   NOTIFICATION CLICK
+========================================================= */
+
+self.addEventListener(
+    "notificationclick",
+    event => {
+
+        event.notification.close();
+
+        event.waitUntil(
+            clients.openWindow(
+                event.notification?.data?.url ||
+                "./"
+            )
         );
     }
 );
