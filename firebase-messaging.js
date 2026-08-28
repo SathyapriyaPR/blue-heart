@@ -2,10 +2,23 @@
 
 /* =========================================================
    BLUE HEART V6 🩵
-   FIREBASE PUSH REGISTRATION
+   FIREBASE CLOUD MESSAGING
+   Current Firebase Installation ID registration
 ========================================================= */
 
-const BLUE_HEART_FIREBASE_CONFIG = {
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+
+import {
+    getMessaging,
+    isSupported,
+    register,
+    onRegistered
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging.js";
+
+
+const firebaseConfig = {
 
     apiKey:
         "AIzaSyCjBBNpq62munJxIUXYRdAaiLn1oh666is",
@@ -27,159 +40,120 @@ const BLUE_HEART_FIREBASE_CONFIG = {
 
     measurementId:
         "G-W22JWZS13J"
-
 };
 
 
-const BLUE_HEART_VAPID_KEY =
+const VAPID_KEY =
     "BIKYDxIVFU5Gyn4ahRwc6s2SSTvuSKJguMr_YCMPs0W-spvGKPboi8GwG1WYE0TXfDrK-52JMt3rwsvx73JUsbk";
 
 
-let blueHeartMessaging =
-    null;
+let messaging = null;
 
 
 /* =========================================================
-   SCRIPT LOADER
+   DISPLAY STATUS
 ========================================================= */
 
-function loadFirebaseScript(src) {
+function setPushStatus(message) {
 
-    return new Promise(
-        (resolve, reject) => {
+    const status =
+        document.getElementById(
+            "blueHeartPushStatus"
+        );
 
-            const existing =
-                document.querySelector(
-                    `script[src="${src}"]`
-                );
+    if (status) {
 
-            if (existing) {
+        status.innerHTML =
+            message;
 
-                if (
-                    window.firebase
-                ) {
-                    resolve();
-                    return;
-                }
+    }
 
-                existing.addEventListener(
-                    "load",
-                    resolve,
-                    {
-                        once: true
-                    }
-                );
-
-                existing.addEventListener(
-                    "error",
-                    reject,
-                    {
-                        once: true
-                    }
-                );
-
-                return;
-            }
+}
 
 
-            const script =
-                document.createElement(
-                    "script"
-                );
+/* =========================================================
+   DISPLAY ERROR DIRECTLY IN BLUE HEART
+========================================================= */
 
+function showPushError(error) {
 
-            script.src =
-                src;
-
-
-            script.onload =
-                resolve;
-
-
-            script.onerror =
-                reject;
-
-
-            document.head.appendChild(
-                script
-            );
-
-        }
+    console.error(
+        "Blue Heart Firebase error:",
+        error
     );
 
+
+    const message =
+        error?.message ||
+        String(error);
+
+
+    const code =
+        error?.code
+            ? `<br><small>${error.code}</small>`
+            : "";
+
+
+    setPushStatus(`
+
+        <strong>
+            ❌ Could not connect
+        </strong>
+
+        <div
+            style="
+                margin-top:8px;
+                font-size:13px;
+                word-break:break-word;
+            "
+        >
+            ${message}
+            ${code}
+        </div>
+
+    `);
+
 }
 
 
 /* =========================================================
-   LOAD FIREBASE
+   FIREBASE
 ========================================================= */
 
-async function initialiseBlueHeartFirebase() {
+async function startFirebase() {
 
-    try {
+    const supported =
+        await isSupported();
 
-        await loadFirebaseScript(
-            "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"
+
+    if (!supported) {
+
+        throw new Error(
+            "Firebase push notifications are not supported by this browser."
         );
-
-
-        await loadFirebaseScript(
-            "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"
-        );
-
-
-        if (
-            !window.firebase
-        ) {
-
-            throw new Error(
-                "Firebase SDK did not load."
-            );
-
-        }
-
-
-        if (
-            !firebase.apps.length
-        ) {
-
-            firebase.initializeApp(
-                BLUE_HEART_FIREBASE_CONFIG
-            );
-
-        }
-
-
-        blueHeartMessaging =
-            firebase.messaging();
-
-
-        console.log(
-            "Blue Heart Firebase ready 🩵"
-        );
-
-
-        return true;
 
     }
 
-    catch (error) {
 
-        console.error(
-            "Blue Heart Firebase failed:",
-            error
+    const app =
+        initializeApp(
+            firebaseConfig
         );
 
 
-        return false;
+    messaging =
+        getMessaging(
+            app
+        );
 
-    }
+
+    return messaging;
 
 }
 
 
 /* =========================================================
-   SERVICE WORKER
+   GET BLUE HEART SERVICE WORKER
 ========================================================= */
 
 async function getBlueHeartServiceWorker() {
@@ -192,26 +166,29 @@ async function getBlueHeartServiceWorker() {
     ) {
 
         throw new Error(
-            "Service workers are not supported."
+            "This browser does not support service workers."
         );
 
     }
 
 
-    /*
-       Reuse Blue Heart's EXISTING service worker.
-       Do not create a second competing worker.
-    */
+    setPushStatus(
+        "Checking Blue Heart service worker…"
+    );
+
 
     let registration =
         await navigator
             .serviceWorker
-            .getRegistration("./");
+            .getRegistration();
 
 
-    if (
-        !registration
-    ) {
+    if (!registration) {
+
+        setPushStatus(
+            "Installing Blue Heart service worker…"
+        );
+
 
         registration =
             await navigator
@@ -234,18 +211,34 @@ async function getBlueHeartServiceWorker() {
 
 
 /* =========================================================
-   REQUEST PUSH REGISTRATION
+   CONNECT PUSH
 ========================================================= */
 
 async function enableBlueHeartPush() {
 
-    const status =
-        document.getElementById(
-            "blueHeartPushStatus"
+    try {
+
+        setPushStatus(
+            "Starting…"
         );
 
 
-    try {
+        /* -----------------------------------------
+           HTTPS
+        ----------------------------------------- */
+
+        if (!window.isSecureContext) {
+
+            throw new Error(
+                "Blue Heart must be opened from its HTTPS GitHub Pages address."
+            );
+
+        }
+
+
+        /* -----------------------------------------
+           NOTIFICATIONS
+        ----------------------------------------- */
 
         if (
             !(
@@ -255,38 +248,16 @@ async function enableBlueHeartPush() {
         ) {
 
             throw new Error(
-                "Notifications are not supported on this device."
+                "This browser does not support notifications."
             );
 
         }
 
 
-        if (
-            !window.isSecureContext
-        ) {
+        setPushStatus(
+            "Checking notification permission…"
+        );
 
-            throw new Error(
-                "Blue Heart must be opened through HTTPS."
-            );
-
-        }
-
-
-        if (
-            status
-        ) {
-
-            status.textContent =
-                "Connecting…";
-
-        }
-
-
-        /*
-           This happens from a button press,
-           so the browser is allowed to
-           show its notification permission prompt.
-        */
 
         let permission =
             Notification.permission;
@@ -309,138 +280,195 @@ async function enableBlueHeartPush() {
             "granted"
         ) {
 
-            if (
-                status
-            ) {
-
-                status.textContent =
-                    "Notifications are not allowed.";
-
-            }
-
-
-            return;
-
-        }
-
-
-        const firebaseReady =
-            await initialiseBlueHeartFirebase();
-
-
-        if (
-            !firebaseReady
-        ) {
-
             throw new Error(
-                "Firebase could not start."
+                "Notification permission was not granted."
             );
 
         }
 
 
-        const registration =
+        /* -----------------------------------------
+           SERVICE WORKER
+        ----------------------------------------- */
+
+        const serviceWorkerRegistration =
             await getBlueHeartServiceWorker();
 
 
+        /* -----------------------------------------
+           FIREBASE
+        ----------------------------------------- */
+
+        setPushStatus(
+            "Connecting to Firebase…"
+        );
+
+
+        const currentMessaging =
+            await startFirebase();
+
+
         /*
-           Firebase registration token.
-           Used for our first end-to-end push test.
-        */
+         * Firebase now delivers the Firebase
+         * Installation ID through onRegistered().
+         */
 
-        const token =
-            await blueHeartMessaging
-                .getToken({
-
-                    vapidKey:
-                        BLUE_HEART_VAPID_KEY,
-
-                    serviceWorkerRegistration:
-                        registration
-
-                });
+        let registrationReceived =
+            false;
 
 
-        if (
-            !token
-        ) {
+        const unsubscribe =
+            onRegistered(
+                currentMessaging,
+                installationId => {
 
-            throw new Error(
-                "Firebase did not return a registration token."
+                    registrationReceived =
+                        true;
+
+
+                    console.log(
+                        "Blue Heart Firebase Installation ID:",
+                        installationId
+                    );
+
+
+                    localStorage.setItem(
+                        "blueheart_firebase_installation_id",
+                        installationId
+                    );
+
+
+                    localStorage.setItem(
+                        "blueheart_fcm_registered_at",
+                        new Date()
+                            .toISOString()
+                    );
+
+
+                    setPushStatus(`
+
+                        <strong>
+                            ✅ Connected
+                        </strong>
+
+                        <br>
+
+                        <span
+                            style="
+                                font-size:13px;
+                            "
+                        >
+                            Blue Heart is registered
+                            for push notifications.
+                        </span>
+
+                    `);
+
+
+                    const button =
+                        document.getElementById(
+                            "connectBlueHeartPush"
+                        );
+
+
+                    if (button) {
+
+                        button.textContent =
+                            "Reconnect notifications";
+
+                    }
+
+
+                    setTimeout(
+                        () => {
+
+                            unsubscribe();
+
+                        },
+                        2000
+                    );
+
+                }
             );
 
-        }
+
+        /* -----------------------------------------
+           REGISTER WITH FCM
+        ----------------------------------------- */
+
+        setPushStatus(
+            "Registering this phone with Firebase…"
+        );
+
+
+        await register(
+            currentMessaging,
+            {
+
+                vapidKey:
+                    VAPID_KEY,
+
+                serviceWorkerRegistration:
+                    serviceWorkerRegistration
+
+            }
+        );
 
 
         /*
-           Keep the token locally for now.
+         * onRegistered should normally fire
+         * shortly after register().
+         */
 
-           NO student information is being
-           uploaded here.
-        */
-
-        localStorage.setItem(
-            "blueheart_fcm_token",
-            token
+        setPushStatus(
+            "Firebase accepted the registration. Waiting for device ID…"
         );
 
 
-        localStorage.setItem(
-            "blueheart_fcm_registered_at",
-            new Date()
-                .toISOString()
-        );
+        /*
+         * Don't leave the user staring at
+         * 'Connecting' forever.
+         */
 
+        setTimeout(
+            () => {
 
-        if (
-            status
-        ) {
+                if (
+                    !registrationReceived
+                ) {
 
-            status.innerHTML =
-                `
-                <strong>
-                    Connected ✓
-                </strong>
-                <br>
-                This phone/browser can receive
-                Blue Heart push notifications.
-                `;
+                    setPushStatus(`
 
-        }
+                        <strong>
+                            ⚠️ Registration started
+                        </strong>
 
+                        <br>
 
-        console.log(
-            "Blue Heart FCM token:",
-            token
-        );
+                        <span
+                            style="
+                                font-size:13px;
+                            "
+                        >
+                            Firebase has not returned the
+                            device ID yet. Reopen Blue Heart
+                            once and try again.
+                        </span>
 
+                    `);
 
-        alert(
-            "Blue Heart push notifications are connected 🩵"
+                }
+
+            },
+            15000
         );
 
     }
 
     catch (error) {
 
-        console.error(
-            "Blue Heart push registration failed:",
+        showPushError(
             error
-        );
-
-
-        if (
-            status
-        ) {
-
-            status.textContent =
-                "Could not connect. Check the browser console.";
-
-        }
-
-
-        alert(
-            "Blue Heart couldn't connect push notifications yet."
         );
 
     }
@@ -471,13 +499,17 @@ function createBlueHeartPushCard() {
         );
 
 
-    if (
-        !settingsView
-    ) {
+    if (!settingsView) {
 
         return;
 
     }
+
+
+    const savedFID =
+        localStorage.getItem(
+            "blueheart_firebase_installation_id"
+        );
 
 
     const card =
@@ -494,23 +526,17 @@ function createBlueHeartPushCard() {
         "card";
 
 
-    const alreadyConnected =
-        Boolean(
-            localStorage.getItem(
-                "blueheart_fcm_token"
-            )
-        );
-
-
     card.innerHTML = `
 
         <p class="eyebrow">
             LOCK-SCREEN NOTIFICATIONS
         </p>
 
+
         <h3>
             🔔 Blue Heart Push
         </h3>
+
 
         <p
             class="muted"
@@ -518,9 +544,8 @@ function createBlueHeartPushCard() {
                 margin-top:8px;
             "
         >
-            Connect this device so Blue Heart
-            can receive reminders even when
-            the app is not open.
+            Connect this phone so Blue Heart
+            can receive push reminders.
         </p>
 
 
@@ -533,17 +558,17 @@ function createBlueHeartPushCard() {
         >
 
             ${
-                alreadyConnected
+                savedFID
 
-                    ? `
-                        <strong>
-                            Connected ✓
-                        </strong>
-                      `
+                ? `
+                    <strong>
+                        ✅ Connected
+                    </strong>
+                  `
 
-                    : `
-                        Not connected yet.
-                      `
+                : `
+                    Not connected yet.
+                  `
             }
 
         </div>
@@ -556,21 +581,17 @@ function createBlueHeartPushCard() {
         >
 
             ${
-                alreadyConnected
+                savedFID
 
-                    ? "Reconnect notifications"
+                ? "Reconnect notifications"
 
-                    : "Connect lock-screen notifications"
+                : "Connect lock-screen notifications"
             }
 
         </button>
 
     `;
 
-
-    /*
-       Put it near the top of Settings.
-    */
 
     settingsView.prepend(
         card
@@ -596,12 +617,6 @@ function createBlueHeartPushCard() {
 window.addEventListener(
     "DOMContentLoaded",
     () => {
-
-        /*
-           The rest of Blue Heart may still
-           be building dynamic settings UI,
-           so give it a moment.
-        */
 
         setTimeout(
             createBlueHeartPushCard,
