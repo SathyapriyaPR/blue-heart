@@ -1,10 +1,53 @@
 "use strict";
 
 /* =========================================================
-   BLUE HEART PUSH DIAGNOSTIC
+   BLUE HEART V6 🩵
+   FIREBASE PUSH NOTIFICATIONS
 ========================================================= */
 
-function setPushStatus(message) {
+
+/* =========================================================
+   FIREBASE CONFIGURATION
+========================================================= */
+
+const BLUE_HEART_FIREBASE_CONFIG = {
+
+    apiKey:
+        "AIzaSyCjBBNpq62muhJxIUxYRdAailn1oh666is",
+
+    authDomain:
+        "blue-heart-a78ed.firebaseapp.com",
+
+    projectId:
+        "blue-heart-a78ed",
+
+    storageBucket:
+        "blue-heart-a78ed.firebasestorage.app",
+
+    messagingSenderId:
+        "550837365984",
+
+    appId:
+        "1:550837365984:web:2ce4f764699de294fb3485",
+
+    measurementId:
+        "G-W22JWZS13J"
+};
+
+
+/* =========================================================
+   FIREBASE WEB PUSH VAPID KEY
+========================================================= */
+
+const BLUE_HEART_VAPID_KEY =
+    "BIKYDxIVFU5Gyn4ahRwc6s2SSTvuSKJguMr_YCMPs0W-spvGKPboi8GwG1WYE0TXfDrK-52JMt3rwsvx73JUsbk";
+
+
+/* =========================================================
+   STATUS DISPLAY
+========================================================= */
+
+function setBlueHeartPushStatus(message) {
 
     const status =
         document.getElementById(
@@ -17,14 +60,30 @@ function setPushStatus(message) {
 }
 
 
-function showPushError(error) {
+/* =========================================================
+   ERROR DISPLAY
+========================================================= */
+
+function showBlueHeartPushError(error) {
 
     console.error(
         "Blue Heart Push Error:",
         error
     );
 
-    setPushStatus(`
+
+    const message =
+        error?.message ||
+        String(error);
+
+
+    const code =
+        error?.code
+            ? `<br><small>${error.code}</small>`
+            : "";
+
+
+    setBlueHeartPushStatus(`
 
         <strong>
             ❌ Could not connect
@@ -34,10 +93,12 @@ function showPushError(error) {
             style="
                 margin-top:8px;
                 font-size:13px;
+                line-height:1.5;
                 word-break:break-word;
             "
         >
-            ${error?.message || String(error)}
+            ${message}
+            ${code}
         </div>
 
     `);
@@ -45,46 +106,234 @@ function showPushError(error) {
 
 
 /* =========================================================
-   BUTTON
+   LOAD FIREBASE
+========================================================= */
+
+async function loadBlueHeartFirebase() {
+
+    setBlueHeartPushStatus(
+        "Loading Firebase…"
+    );
+
+
+    const firebaseAppModule =
+        await import(
+            "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js"
+        );
+
+
+    setBlueHeartPushStatus(
+        "Firebase App loaded ✓"
+    );
+
+
+    const firebaseMessagingModule =
+        await import(
+            "https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging.js"
+        );
+
+
+    setBlueHeartPushStatus(
+        "Firebase Messaging loaded ✓"
+    );
+
+
+    return {
+
+        firebaseAppModule,
+        firebaseMessagingModule
+
+    };
+}
+
+
+/* =========================================================
+   SERVICE WORKER
+========================================================= */
+
+async function getBlueHeartServiceWorker() {
+
+    if (
+        !(
+            "serviceWorker"
+            in navigator
+        )
+    ) {
+
+        throw new Error(
+            "This browser does not support service workers."
+        );
+    }
+
+
+    setBlueHeartPushStatus(
+        "Registering Blue Heart service worker…"
+    );
+
+
+    /*
+        Register Blue Heart's own service worker.
+
+        updateViaCache: "none"
+        tells Chrome to check GitHub for the current
+        service-worker.js instead of relying on an
+        older cached copy.
+    */
+
+    const registration =
+        await navigator.serviceWorker.register(
+            "./service-worker.js?v=6final1",
+            {
+
+                scope:
+                    "./",
+
+                updateViaCache:
+                    "none"
+
+            }
+        );
+
+
+    setBlueHeartPushStatus(
+        "Waiting for service worker…"
+    );
+
+
+    /*
+        Wait for an active worker.
+
+        If one is already active, we can immediately
+        continue.
+    */
+
+    if (
+        registration.active
+    ) {
+
+        setBlueHeartPushStatus(
+            "Service worker ready ✓"
+        );
+
+        return registration;
+    }
+
+
+    /*
+        Otherwise wait for Chrome to activate it.
+    */
+
+    const readyRegistration =
+        await Promise.race([
+
+            navigator.serviceWorker.ready,
+
+            new Promise(
+                (_, reject) => {
+
+                    setTimeout(
+                        () => {
+
+                            reject(
+                                new Error(
+                                    "Blue Heart service worker did not become ready within 20 seconds."
+                                )
+                            );
+
+                        },
+                        20000
+                    );
+
+                }
+            )
+
+        ]);
+
+
+    setBlueHeartPushStatus(
+        "Service worker ready ✓"
+    );
+
+
+    return readyRegistration;
+}
+
+
+/* =========================================================
+   CONNECT BLUE HEART PUSH
 ========================================================= */
 
 async function connectBlueHeartPush() {
 
+    const button =
+        document.getElementById(
+            "connectBlueHeartPush"
+        );
+
+
     try {
 
-        setPushStatus(
-            "Button works ✓ Loading Firebase…"
-        );
+        /* -----------------------------------------
+           BUTTON STATE
+        ----------------------------------------- */
+
+        if (button) {
+
+            button.disabled =
+                true;
+
+            button.textContent =
+                "Connecting…";
+        }
 
 
         /* -----------------------------------------
-           LOAD FIREBASE ONLY AFTER BUTTON PRESS
+           HTTPS CHECK
         ----------------------------------------- */
 
-        const firebaseAppModule =
-            await import(
-                "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js"
+        if (
+            !window.isSecureContext
+        ) {
+
+            throw new Error(
+                "Blue Heart must be opened using its HTTPS GitHub Pages address."
             );
+        }
 
 
-        setPushStatus(
-            "Firebase App loaded ✓"
-        );
+        /* -----------------------------------------
+           NOTIFICATION SUPPORT
+        ----------------------------------------- */
 
+        if (
+            !(
+                "Notification"
+                in window
+            )
+        ) {
 
-        const firebaseMessagingModule =
-            await import(
-                "https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging.js"
+            throw new Error(
+                "Notifications are not supported by this browser."
             );
+        }
 
 
-        setPushStatus(
-            "Firebase Messaging loaded ✓"
-        );
+        /* -----------------------------------------
+           LOAD FIREBASE
+        ----------------------------------------- */
+
+        const {
+
+            firebaseAppModule,
+            firebaseMessagingModule
+
+        } =
+            await loadBlueHeartFirebase();
 
 
         const {
-            initializeApp
+            initializeApp,
+            getApps
         } =
             firebaseAppModule;
 
@@ -99,29 +348,36 @@ async function connectBlueHeartPush() {
 
 
         /* -----------------------------------------
-           SUPPORT
+           FIREBASE SUPPORT
         ----------------------------------------- */
+
+        setBlueHeartPushStatus(
+            "Checking Firebase support…"
+        );
+
 
         const supported =
             await isSupported();
 
 
-        if (!supported) {
+        if (
+            !supported
+        ) {
 
             throw new Error(
-                "Firebase Messaging is not supported by this browser."
+                "Firebase Cloud Messaging is not supported by this browser."
             );
         }
 
 
-        setPushStatus(
-            "Firebase supported ✓ Checking notifications…"
+        /* -----------------------------------------
+           NOTIFICATION PERMISSION
+        ----------------------------------------- */
+
+        setBlueHeartPushStatus(
+            "Checking notification permission…"
         );
 
-
-        /* -----------------------------------------
-           PERMISSION
-        ----------------------------------------- */
 
         let permission =
             Notification.permission;
@@ -133,8 +389,7 @@ async function connectBlueHeartPush() {
         ) {
 
             permission =
-                await Notification
-                    .requestPermission();
+                await Notification.requestPermission();
         }
 
 
@@ -149,8 +404,8 @@ async function connectBlueHeartPush() {
         }
 
 
-        setPushStatus(
-            "Notifications allowed ✓ Checking service worker…"
+        setBlueHeartPushStatus(
+            "Notifications allowed ✓"
         );
 
 
@@ -158,156 +413,268 @@ async function connectBlueHeartPush() {
            SERVICE WORKER
         ----------------------------------------- */
 
-        if (
-            !(
-                "serviceWorker"
-                in navigator
-            )
-        ) {
-
-            throw new Error(
-                "Service workers are not supported."
-            );
-        }
-
-
-        const registration =
-            await navigator
-                .serviceWorker
-                .register(
-                    "./service-worker.js?v=6debug4",
-                    {
-                        scope: "./",
-                        updateViaCache: "none"
-                    }
-                );
-
-
-        setPushStatus(
-            "Service worker registered. Waiting for activation…"
-        );
-
-
-        const readyRegistration =
-            await Promise.race([
-
-                navigator.serviceWorker.ready,
-
-                new Promise(
-                    (_, reject) =>
-                        setTimeout(
-                            () =>
-                                reject(
-                                    new Error(
-                                        "Service worker did not become ready within 15 seconds."
-                                    )
-                                ),
-                            15000
-                        )
-                )
-
-            ]);
-
-
-        setPushStatus(
-            "Service worker ready ✓ Connecting Firebase…"
-        );
+        const serviceWorkerRegistration =
+            await getBlueHeartServiceWorker();
 
 
         /* -----------------------------------------
-           FIREBASE
+           INITIALISE FIREBASE
         ----------------------------------------- */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCjBBNpq62muhJxIUxYRdAailn1oh666is",
-  authDomain: "blue-heart-a78ed.firebaseapp.com",
-  projectId: "blue-heart-a78ed",
-  storageBucket: "blue-heart-a78ed.firebasestorage.app",
-  messagingSenderId: "550837365984",
-  appId: "1:550837365984:web:2ce4f764699de294fb3485",
-  measurementId: "G-W22JWZS13J"
-};
-        
+        setBlueHeartPushStatus(
+            "Starting Firebase…"
+        );
 
 
-        const VAPID_KEY =
-            "BIKYDxIVFU5Gyn4ahRwc6s2SSTvuSKJguMr_YCMPs0W-spvGKPboi8GwG1WYE0TXfDrK-52JMt3rwsvx73JUsbk";
+        let firebaseApp;
 
 
-        const app =
-            initializeApp(
-                firebaseConfig
-            );
+        const existingApps =
+            getApps();
+
+
+        if (
+            existingApps.length > 0
+        ) {
+
+            firebaseApp =
+                existingApps[0];
+
+        }
+        else {
+
+            firebaseApp =
+                initializeApp(
+                    BLUE_HEART_FIREBASE_CONFIG
+                );
+        }
 
 
         const messaging =
             getMessaging(
-                app
+                firebaseApp
             );
 
 
-        onRegistered(
+        /* -----------------------------------------
+           FIREBASE INSTALLATION ID CALLBACK
+        ----------------------------------------- */
+
+        try {
+
+            onRegistered(
+                messaging,
+                installationId => {
+
+                    console.log(
+                        "Blue Heart Firebase Installation ID:",
+                        installationId
+                    );
+
+
+                    if (
+                        installationId
+                    ) {
+
+                        localStorage.setItem(
+                            "blueheart_firebase_installation_id",
+                            installationId
+                        );
+                    }
+
+                }
+            );
+
+        }
+        catch (callbackError) {
+
+            /*
+                Registration can still succeed even
+                if this optional callback isn't
+                immediately available.
+            */
+
+            console.warn(
+                "Blue Heart registration callback:",
+                callbackError
+            );
+        }
+
+
+        /* -----------------------------------------
+           REGISTER WITH FIREBASE CLOUD MESSAGING
+        ----------------------------------------- */
+
+        setBlueHeartPushStatus(
+            "Registering phone with Firebase…"
+        );
+
+
+        await register(
             messaging,
-            installationId => {
+            {
 
-                localStorage.setItem(
-                    "blueheart_firebase_installation_id",
-                    installationId
-                );
+                vapidKey:
+                    BLUE_HEART_VAPID_KEY,
 
-
-                setPushStatus(`
-
-                    <strong>
-                        ✅ Connected
-                    </strong>
-
-                    <br>
-
-                    Blue Heart push registration succeeded.
-
-                `);
+                serviceWorkerRegistration:
+                    serviceWorkerRegistration
 
             }
         );
 
 
-        setPushStatus(
-            "Registering with Firebase…"
+        /* -----------------------------------------
+           SAVE SUCCESS LOCALLY
+        ----------------------------------------- */
+
+        localStorage.setItem(
+            "blueheart_push_registered",
+            "true"
         );
 
-await register(
-    messaging,
-    {
-        vapidKey:
-            VAPID_KEY,
 
-        serviceWorkerRegistration:
-            readyRegistration
-    }
-);
+        localStorage.setItem(
+            "blueheart_push_registered_at",
+            new Date().toISOString()
+        );
 
 
-        setPushStatus(
-            "Firebase registration accepted. Waiting for device ID…"
+        /* -----------------------------------------
+           SUCCESS
+        ----------------------------------------- */
+
+        setBlueHeartPushStatus(`
+
+            <strong>
+                ✅ Connected
+            </strong>
+
+            <br>
+
+            <span
+                style="
+                    font-size:13px;
+                    line-height:1.5;
+                "
+            >
+                Firebase accepted this phone
+                for Blue Heart push notifications.
+            </span>
+
+        `);
+
+
+        if (
+            button
+        ) {
+
+            button.textContent =
+                "Reconnect notifications";
+        }
+
+
+        console.log(
+            "Blue Heart push registration successful 🩵"
         );
 
     }
 
     catch (error) {
 
-        showPushError(
+        showBlueHeartPushError(
             error
+        );
+
+
+        if (
+            button
+        ) {
+
+            button.textContent =
+                "Try connecting again";
+        }
+
+    }
+
+    finally {
+
+        if (
+            button
+        ) {
+
+            button.disabled =
+                false;
+        }
+    }
+}
+
+
+/* =========================================================
+   RESTORE SAVED CONNECTION STATUS
+========================================================= */
+
+function restoreBlueHeartPushStatus() {
+
+    const registered =
+        localStorage.getItem(
+            "blueheart_push_registered"
+        );
+
+
+    if (
+        registered ===
+        "true"
+    ) {
+
+        setBlueHeartPushStatus(`
+
+            <strong>
+                ✅ Connected
+            </strong>
+
+            <br>
+
+            <span
+                style="
+                    font-size:13px;
+                "
+            >
+                Blue Heart push is registered
+                on this phone.
+            </span>
+
+        `);
+
+
+        const button =
+            document.getElementById(
+                "connectBlueHeartPush"
+            );
+
+
+        if (
+            button
+        ) {
+
+            button.textContent =
+                "Reconnect notifications";
+        }
+    }
+    else {
+
+        setBlueHeartPushStatus(
+            "Ready to connect."
         );
     }
 }
 
 
 /* =========================================================
-   ATTACH BUTTON
+   INITIALISE BUTTON
 ========================================================= */
 
-function startBlueHeartPush() {
+function initialiseBlueHeartPush() {
 
     const button =
         document.getElementById(
@@ -315,25 +682,34 @@ function startBlueHeartPush() {
         );
 
 
-    if (!button) {
+    if (
+        !button
+    ) {
 
         console.error(
-            "Blue Heart push button missing."
+            "Blue Heart push button was not found."
         );
 
         return;
     }
 
 
+    /*
+        onclick instead of addEventListener prevents
+        duplicate handlers while we're upgrading V6.
+    */
+
     button.onclick =
         connectBlueHeartPush;
 
 
-    setPushStatus(
-        "Ready to connect."
-    );
+    restoreBlueHeartPushStatus();
 }
 
+
+/* =========================================================
+   START
+========================================================= */
 
 if (
     document.readyState ===
@@ -342,11 +718,11 @@ if (
 
     document.addEventListener(
         "DOMContentLoaded",
-        startBlueHeartPush
+        initialiseBlueHeartPush
     );
 
 }
 else {
 
-    startBlueHeartPush();
+    initialiseBlueHeartPush();
 }
