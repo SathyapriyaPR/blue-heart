@@ -218,26 +218,16 @@ async function connectBlueHeartPush() {
            FIREBASE
         ----------------------------------------- */
 
-        const firebaseConfig = {
-
-            apiKey:
-                "AIzaSyCjBBNpq62munJxIUXYRdAaiLn1oh666is",
-
-            authDomain:
-                "blue-heart-a78ed.firebaseapp.com",
-
-            projectId:
-                "blue-heart-a78ed",
-
-            storageBucket:
-                "blue-heart-a78ed.firebasestorage.app",
-
-            messagingSenderId:
-                "550837365984",
-
-            appId:
-                "1:550837365984:web:2ce4f764699de294fb3485"
-        };
+const firebaseConfig = {
+  apiKey: "AIzaSyCjBBNpq62muhJxIUxYRdAailn1oh666is",
+  authDomain: "blue-heart-a78ed.firebaseapp.com",
+  projectId: "blue-heart-a78ed",
+  storageBucket: "blue-heart-a78ed.firebasestorage.app",
+  messagingSenderId: "550837365984",
+  appId: "1:550837365984:web:2ce4f764699de294fb3485",
+  measurementId: "G-W22JWZS13J"
+};
+        
 
 
         const VAPID_KEY =
