@@ -388,7 +388,7 @@ async function getBlueHeartServiceWorker() {
     const registration =
         await navigator.serviceWorker
             .register(
-                "./service-worker.js?v=6fix2",
+                ""./service-worker.js?v=6fix3"",
                 {
 
                     scope:
