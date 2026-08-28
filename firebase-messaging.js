@@ -8,7 +8,7 @@
 const BLUE_HEART_FIREBASE_CONFIG = {
 
     apiKey:
-        "AIzaSyCjBBNpq62munJxIUXYRdAaiLn1oh6661s",
+        "AIzaSyCjBBNpq62munJxIUXYRdAaiLn1oh666is",
 
     authDomain:
         "blue-heart-a78ed.firebaseapp.com",
