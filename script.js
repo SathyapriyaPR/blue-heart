@@ -7843,3 +7843,211 @@ document.addEventListener(
     "DOMContentLoaded",
     initialise
 );
+/* =========================================================
+   BLUE HEART V5.1
+   ROSE MESSAGES + FOLLOW-UP PERIOD HELPERS
+========================================================= */
+
+const BLUE_HEART_PERIOD_LABELS = {
+    P1: "P1 · 8:30 AM–9:10 AM",
+    P2: "P2 · 9:10 AM–9:50 AM",
+    P3: "P3 · 10:00 AM–10:40 AM",
+    P4: "P4 · 10:40 AM–11:20 AM",
+    P5: "P5 · 11:20 AM–12:00 PM",
+    P6: "P6 · 12:35 PM–1:15 PM",
+    P7: "P7 · 1:15 PM–1:55 PM",
+    P8: "P8 · 2:05 PM–2:45 PM"
+};
+
+const BLUE_HEART_ROSE_MESSAGES = [
+    "You are doing great, my love 🩵",
+    "I hope you know how much beauty you bring into people's days.",
+    "You don't need to finish everything to be enough for today.",
+    "One student, one task, one step at a time.",
+    "I'm proud of you, Rose.",
+    "Your softness is not a weakness.",
+    "Even on difficult days, you are still doing meaningful work.",
+    "Drink some water, honey 🌷",
+    "You deserve the same gentleness you give everyone else.",
+    "Today does not have to be perfect.",
+    "Breathe. You have time.",
+    "Blue and White Heart is carrying the list. You don't have to."
+];
+
+function formatFollowupPeriod(period) {
+    return BLUE_HEART_PERIOD_LABELS[period] || period || "";
+}
+
+function ensureFollowupPeriodField() {
+
+    if (document.getElementById("followupPeriod")) {
+        return;
+    }
+
+    const dateInput =
+        document.getElementById("followupDate");
+
+    if (!dateInput) {
+        return;
+    }
+
+    const dateField =
+        dateInput.closest("label") ||
+        dateInput.parentElement;
+
+    if (!dateField) {
+        return;
+    }
+
+    const wrap =
+        document.createElement("label");
+
+    wrap.innerHTML = `
+        Period
+        <select id="followupPeriod">
+            <option value="">Any time / not decided</option>
+            <option value="P1">P1 · 8:30 AM–9:10 AM</option>
+            <option value="P2">P2 · 9:10 AM–9:50 AM</option>
+            <option value="P3">P3 · 10:00 AM–10:40 AM</option>
+            <option value="P4">P4 · 10:40 AM–11:20 AM</option>
+            <option value="P5">P5 · 11:20 AM–12:00 PM</option>
+            <option value="P6">P6 · 12:35 PM–1:15 PM</option>
+            <option value="P7">P7 · 1:15 PM–1:55 PM</option>
+            <option value="P8">P8 · 2:05 PM–2:45 PM</option>
+        </select>
+    `;
+
+    dateField.insertAdjacentElement(
+        "afterend",
+        wrap
+    );
+}
+
+function getRoseMessageForToday() {
+
+    const now =
+        new Date();
+
+    const seed =
+        now.getFullYear() * 1000 +
+        (now.getMonth() + 1) * 40 +
+        now.getDate();
+
+    return BLUE_HEART_ROSE_MESSAGES[
+        seed % BLUE_HEART_ROSE_MESSAGES.length
+    ];
+}
+
+function ensureRoseMessageCard() {
+
+    const todayView =
+        document.getElementById("view-today");
+
+    if (
+        !todayView ||
+        document.getElementById("roseMessageCard")
+    ) {
+        return;
+    }
+
+    const card =
+        document.createElement("section");
+
+    card.id =
+        "roseMessageCard";
+
+    card.className =
+        "card";
+
+    card.innerHTML = `
+        <p class="eyebrow">
+            FOR ROSE 🩵
+        </p>
+
+        <p
+            id="roseDailyMessage"
+            style="
+                margin-top:8px;
+                font-size:1.05rem;
+                line-height:1.6;
+            "
+        ></p>
+    `;
+
+    todayView.prepend(card);
+}
+
+function renderRoseMessage() {
+
+    ensureRoseMessageCard();
+
+    const message =
+        document.getElementById(
+            "roseDailyMessage"
+        );
+
+    if (message) {
+        message.textContent =
+            getRoseMessageForToday();
+    }
+}
+/* =========================================================
+   BLUE HEART V5.1
+   DATA LONGEVITY
+========================================================= */
+
+async function requestBlueHeartPersistentStorage() {
+
+    if (
+        !navigator.storage ||
+        !navigator.storage.persist
+    ) {
+        return;
+    }
+
+    try {
+
+        const persistent =
+            await navigator.storage.persisted();
+
+        if (!persistent) {
+
+            await navigator.storage.persist();
+
+        }
+
+    }
+    catch (error) {
+
+        console.warn(
+            "Persistent storage unavailable",
+            error
+        );
+
+    }
+}
+
+
+/* =========================================================
+   V5.1 STARTUP
+========================================================= */
+
+window.addEventListener(
+    "load",
+    () => {
+
+        setTimeout(
+            () => {
+
+                ensureFollowupPeriodField();
+
+                renderRoseMessage();
+
+                requestBlueHeartPersistentStorage();
+
+            },
+            300
+        );
+
+    }
+);
