@@ -161,7 +161,7 @@ async function getBlueHeartServiceWorker() {
 
     const registration =
         await navigator.serviceWorker.register(
-            "./service-worker.js?v=6token1",
+            "./service-worker.js?v=6pushfix1",
             {
                 scope: "./",
                 updateViaCache: "none"
