@@ -286,14 +286,16 @@ async function connectBlueHeartPush() {
             "Registering with Firebase…"
         );
 
+await register(
+    messaging,
+    {
+        vapidKey:
+            VAPID_KEY,
 
-        await register(
-            messaging,
-            {
-                vapidKey:
-                    VAPID_KEY
-            }
-        );
+        serviceWorkerRegistration:
+            readyRegistration
+    }
+);
 
 
         setPushStatus(
