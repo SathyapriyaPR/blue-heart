@@ -67,7 +67,7 @@ function setPushStatus(message) {
 }
 
 
-function showError(error) {
+function showPushError(error) {
 
     console.error(
         "Blue Heart Push Error:",
@@ -77,6 +77,11 @@ function showError(error) {
     const message =
         error?.message ||
         String(error);
+
+    const code =
+        error?.code
+            ? `<br><small>${error.code}</small>`
+            : "";
 
     setPushStatus(`
 
@@ -92,6 +97,7 @@ function showError(error) {
             "
         >
             ${message}
+            ${code}
         </div>
 
     `);
@@ -99,109 +105,247 @@ function showError(error) {
 
 
 /* =========================================================
-   WAIT FOR SERVICE WORKER
+   WAIT UNTIL THIS SERVICE WORKER IS ACTIVE
 ========================================================= */
 
-function waitForServiceWorker(
+function waitForActiveServiceWorker(
     registration
 ) {
 
     return new Promise(
         (resolve, reject) => {
 
-            if (
-                registration.active
-            ) {
-
-                resolve(
-                    registration
-                );
-
-                return;
-            }
-
-
-            let worker =
-                registration.installing ||
-                registration.waiting;
-
-
-            if (!worker) {
-
-                reject(
-                    new Error(
-                        "No service worker is available."
-                    )
-                );
-
-                return;
-            }
+            let finished =
+                false;
 
 
             const timeout =
                 setTimeout(
                     () => {
 
+                        if (finished) {
+                            return;
+                        }
+
+                        finished =
+                            true;
+
                         reject(
                             new Error(
-                                "Service worker did not activate within 15 seconds."
+                                "Blue Heart service worker did not become active within 20 seconds."
                             )
                         );
 
                     },
-                    15000
+                    20000
                 );
 
 
-            const checkState =
-                () => {
+            function finish() {
 
-                    setPushStatus(
-                        "Service worker: " +
-                        worker.state
-                    );
+                if (finished) {
+                    return;
+                }
+
+                finished =
+                    true;
+
+                clearTimeout(
+                    timeout
+                );
+
+                resolve(
+                    registration
+                );
+            }
 
 
-                    if (
-                        worker.state ===
-                        "activated"
-                    ) {
+            function watchWorker(
+                worker
+            ) {
 
-                        clearTimeout(
-                            timeout
+                if (!worker) {
+                    return;
+                }
+
+
+                setPushStatus(
+                    "Service worker: " +
+                    worker.state
+                );
+
+
+                if (
+                    worker.state ===
+                    "activated"
+                ) {
+
+                    finish();
+
+                    return;
+                }
+
+
+                worker.addEventListener(
+                    "statechange",
+                    () => {
+
+                        setPushStatus(
+                            "Service worker: " +
+                            worker.state
                         );
 
-                        resolve(
-                            registration
-                        );
+
+                        if (
+                            worker.state ===
+                            "activated"
+                        ) {
+
+                            finish();
+                        }
+
+
+                        /*
+                           If an old worker becomes
+                           redundant, DON'T fail.
+
+                           Chrome may already be
+                           replacing it with a newer
+                           worker.
+                        */
+
+                        if (
+                            worker.state ===
+                            "redundant"
+                        ) {
+
+                            const replacement =
+                                registration.installing ||
+                                registration.waiting ||
+                                registration.active;
+
+                            if (replacement) {
+
+                                watchWorker(
+                                    replacement
+                                );
+                            }
+                        }
+
                     }
+                );
+            }
 
 
-                    if (
-                        worker.state ===
-                        "redundant"
-                    ) {
+            /*
+               Maybe it is already active.
+            */
 
-                        clearTimeout(
-                            timeout
-                        );
+            if (
+                registration.active
+            ) {
 
-                        reject(
-                            new Error(
-                                "Service worker installation failed."
-                            )
-                        );
-                    }
-                };
+                setPushStatus(
+                    "Service worker active ✓"
+                );
+
+                finish();
+
+                return;
+            }
 
 
-            worker.addEventListener(
-                "statechange",
-                checkState
+            /*
+               Watch whatever Chrome currently has.
+            */
+
+            watchWorker(
+                registration.installing
+            );
+
+            watchWorker(
+                registration.waiting
             );
 
 
-            checkState();
+            /*
+               IMPORTANT:
+               A registration can briefly exist
+               with no worker attached.
+
+               Instead of throwing "No service
+               worker available", wait for Chrome's
+               updatefound event.
+            */
+
+            registration.addEventListener(
+                "updatefound",
+                () => {
+
+                    const worker =
+                        registration.installing;
+
+                    if (worker) {
+
+                        watchWorker(
+                            worker
+                        );
+                    }
+
+                }
+            );
+
+
+            /*
+               Poll as a fallback because some
+               Android Chrome versions can change
+               registration state between events.
+            */
+
+            const poll =
+                setInterval(
+                    () => {
+
+                        if (finished) {
+
+                            clearInterval(
+                                poll
+                            );
+
+                            return;
+                        }
+
+
+                        if (
+                            registration.active
+                        ) {
+
+                            clearInterval(
+                                poll
+                            );
+
+                            finish();
+
+                            return;
+                        }
+
+
+                        const worker =
+                            registration.installing ||
+                            registration.waiting;
+
+
+                        if (worker) {
+
+                            setPushStatus(
+                                "Service worker: " +
+                                worker.state
+                            );
+                        }
+
+                    },
+                    500
+                );
 
         }
     );
@@ -209,7 +353,7 @@ function waitForServiceWorker(
 
 
 /* =========================================================
-   GET BLUE HEART SERVICE WORKER
+   REGISTER BLUE HEART SERVICE WORKER
 ========================================================= */
 
 async function getBlueHeartServiceWorker() {
@@ -228,64 +372,48 @@ async function getBlueHeartServiceWorker() {
 
 
     setPushStatus(
-        "Checking Blue Heart service worker…"
+        "Installing Blue Heart service worker…"
     );
-
-
-    let registration =
-        await navigator.serviceWorker
-            .getRegistration("./");
-
-
-    if (!registration) {
-
-        setPushStatus(
-            "Installing Blue Heart service worker…"
-        );
-
-
-        registration =
-            await navigator.serviceWorker
-                .register(
-                    "./service-worker.js",
-                    {
-                        scope: "./"
-                    }
-                );
-    }
 
 
     /*
-       Ask Chrome to check whether GitHub
-       has a newer service-worker.js.
+       Always ask Chrome to register the current
+       Blue Heart worker.
+
+       ?v=6fix2 forces Chrome to fetch the newest
+       service-worker.js rather than reusing an
+       older script response.
     */
 
-    try {
+    const registration =
+        await navigator.serviceWorker
+            .register(
+                "./service-worker.js?v=6fix2",
+                {
 
-        await registration.update();
+                    scope:
+                        "./",
 
-    } catch (error) {
+                    updateViaCache:
+                        "none"
 
-        console.log(
-            "Service worker update check skipped:",
-            error
-        );
-    }
+                }
+            );
 
 
     setPushStatus(
-        "Waiting for service worker…"
+        "Waiting for service worker to activate…"
     );
 
 
-    return await waitForServiceWorker(
+    return await waitForActiveServiceWorker(
         registration
     );
 }
 
 
 /* =========================================================
-   CONNECT FIREBASE
+   CONNECT PUSH
 ========================================================= */
 
 async function connectBlueHeartPush() {
@@ -299,13 +427,15 @@ async function connectBlueHeartPush() {
     try {
 
         if (button) {
-            button.disabled = true;
+
+            button.disabled =
+                true;
         }
 
 
-        /* -----------------------------
+        /* -------------------------------------
            HTTPS
-        ----------------------------- */
+        ------------------------------------- */
 
         if (
             !window.isSecureContext
@@ -317,9 +447,9 @@ async function connectBlueHeartPush() {
         }
 
 
-        /* -----------------------------
-           BROWSER SUPPORT
-        ----------------------------- */
+        /* -------------------------------------
+           NOTIFICATION SUPPORT
+        ------------------------------------- */
 
         if (
             !(
@@ -329,9 +459,18 @@ async function connectBlueHeartPush() {
         ) {
 
             throw new Error(
-                "Notifications are not supported by this browser."
+                "This browser does not support notifications."
             );
         }
+
+
+        /* -------------------------------------
+           FIREBASE SUPPORT
+        ------------------------------------- */
+
+        setPushStatus(
+            "Checking Firebase support…"
+        );
 
 
         const supported =
@@ -341,14 +480,14 @@ async function connectBlueHeartPush() {
         if (!supported) {
 
             throw new Error(
-                "Firebase Cloud Messaging is not supported by this browser."
+                "Firebase Cloud Messaging is not supported on this browser."
             );
         }
 
 
-        /* -----------------------------
+        /* -------------------------------------
            PERMISSION
-        ----------------------------- */
+        ------------------------------------- */
 
         setPushStatus(
             "Checking notification permission…"
@@ -381,11 +520,11 @@ async function connectBlueHeartPush() {
         }
 
 
-        /* -----------------------------
+        /* -------------------------------------
            SERVICE WORKER
-        ----------------------------- */
+        ------------------------------------- */
 
-        const swRegistration =
+        const serviceWorkerRegistration =
             await getBlueHeartServiceWorker();
 
 
@@ -394,11 +533,11 @@ async function connectBlueHeartPush() {
         );
 
 
-        /* -----------------------------
-           FIREBASE
-        ----------------------------- */
+        /* -------------------------------------
+           FIREBASE INITIALISE
+        ------------------------------------- */
 
-        const firebaseApp =
+        const app =
             initializeApp(
                 firebaseConfig
             );
@@ -406,19 +545,30 @@ async function connectBlueHeartPush() {
 
         const messaging =
             getMessaging(
-                firebaseApp
+                app
             );
 
 
-        let gotFID =
+        let registrationReceived =
             false;
 
+
+        /* -------------------------------------
+           RECEIVE FIREBASE INSTALLATION ID
+        ------------------------------------- */
 
         onRegistered(
             messaging,
             installationId => {
 
-                gotFID = true;
+                registrationReceived =
+                    true;
+
+
+                console.log(
+                    "Blue Heart Firebase Installation ID:",
+                    installationId
+                );
 
 
                 localStorage.setItem(
@@ -431,12 +581,6 @@ async function connectBlueHeartPush() {
                     "blueheart_fcm_registered_at",
                     new Date()
                         .toISOString()
-                );
-
-
-                console.log(
-                    "Blue Heart Firebase Installation ID:",
-                    installationId
                 );
 
 
@@ -454,7 +598,7 @@ async function connectBlueHeartPush() {
                         "
                     >
                         This phone is registered
-                        with Blue Heart Push.
+                        for Blue Heart push notifications.
                     </span>
 
                 `);
@@ -465,9 +609,14 @@ async function connectBlueHeartPush() {
                     button.textContent =
                         "Reconnect notifications";
                 }
+
             }
         );
 
+
+        /* -------------------------------------
+           REGISTER WITH FIREBASE
+        ------------------------------------- */
 
         setPushStatus(
             "Registering phone with Firebase…"
@@ -482,25 +631,32 @@ async function connectBlueHeartPush() {
                     VAPID_KEY,
 
                 serviceWorkerRegistration:
-                    swRegistration
+                    serviceWorkerRegistration
 
             }
         );
 
 
+        setPushStatus(
+            "Firebase registration accepted. Waiting for device ID…"
+        );
+
+
         /*
-           FID arrives through onRegistered().
+           onRegistered() should now supply FID.
         */
 
         setTimeout(
             () => {
 
-                if (!gotFID) {
+                if (
+                    !registrationReceived
+                ) {
 
                     setPushStatus(`
 
                         <strong>
-                            ⚠️ Firebase registration started
+                            ⚠️ Firebase accepted registration
                         </strong>
 
                         <br>
@@ -510,9 +666,7 @@ async function connectBlueHeartPush() {
                                 font-size:13px;
                             "
                         >
-                            Waiting for the device ID.
-                            Try the button once more if
-                            this remains here.
+                            Waiting for Firebase device ID.
                         </span>
 
                     `);
@@ -526,7 +680,7 @@ async function connectBlueHeartPush() {
 
     catch (error) {
 
-        showError(
+        showPushError(
             error
         );
 
@@ -535,14 +689,16 @@ async function connectBlueHeartPush() {
     finally {
 
         if (button) {
-            button.disabled = false;
+
+            button.disabled =
+                false;
         }
     }
 }
 
 
 /* =========================================================
-   CONNECT EXISTING HTML BUTTON
+   CONNECT EXISTING BUTTON
 ========================================================= */
 
 function initialiseBlueHeartPushButton() {
@@ -556,7 +712,7 @@ function initialiseBlueHeartPushButton() {
     if (!button) {
 
         console.error(
-            "Blue Heart push button was not found."
+            "Blue Heart push button not found."
         );
 
         return;
@@ -581,6 +737,7 @@ function initialiseBlueHeartPushButton() {
             "<strong>✅ Connected</strong>"
         );
 
+
         button.textContent =
             "Reconnect notifications";
     }
@@ -601,7 +758,8 @@ if (
         initialiseBlueHeartPushButton
     );
 
-} else {
+}
+else {
 
     initialiseBlueHeartPushButton();
 }
