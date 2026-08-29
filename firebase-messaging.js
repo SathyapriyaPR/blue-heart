@@ -2,7 +2,8 @@
 
 /* =========================================================
    BLUE HEART V6 🩵
-   FIREBASE PUSH + TEST TOKEN
+   FIREBASE PUSH REGISTRATION
+   Firebase Installation ID (FID)
 ========================================================= */
 
 
@@ -36,43 +37,75 @@ const BLUE_HEART_FIREBASE_CONFIG = {
 
 
 /* =========================================================
-   WEB PUSH VAPID KEY
+   FIREBASE WEB PUSH VAPID KEY
 ========================================================= */
 
 const BLUE_HEART_VAPID_KEY =
     "BIKYDxIVFU5Gyn4ahRwc6s2SSTvuSKJguMr_YCMPs0W-spvGKPboi8GwG1WYE0TXfDrK-52JMt3rwsvx73JUsbk";
 
 
-let blueHeartMessaging = null;
-let blueHeartServiceWorker = null;
-let firebaseMessagingModule = null;
+/* =========================================================
+   LOCAL STORAGE KEYS
+========================================================= */
+
+const BLUE_HEART_PUSH_REGISTERED_KEY =
+    "blueheart_push_registered";
+
+const BLUE_HEART_PUSH_REGISTERED_AT_KEY =
+    "blueheart_push_registered_at";
+
+const BLUE_HEART_FIREBASE_FID_KEY =
+    "blueheart_firebase_installation_id";
 
 
 /* =========================================================
-   STATUS
+   STATE
 ========================================================= */
 
-function setBlueHeartPushStatus(message) {
+let blueHeartMessaging =
+    null;
+
+let blueHeartServiceWorkerRegistration =
+    null;
+
+let blueHeartMessagingModule =
+    null;
+
+
+/* =========================================================
+   STATUS DISPLAY
+========================================================= */
+
+function setBlueHeartPushStatus(
+    message
+) {
 
     const status =
         document.getElementById(
             "blueHeartPushStatus"
         );
 
+
     if (status) {
-        status.innerHTML = message;
+
+        status.innerHTML =
+            message;
+
     }
+
 }
 
 
 /* =========================================================
-   ERROR
+   ERROR DISPLAY
 ========================================================= */
 
-function showBlueHeartPushError(error) {
+function showBlueHeartPushError(
+    error
+) {
 
     console.error(
-        "Blue Heart Push Error:",
+        "Blue Heart Firebase error:",
         error
     );
 
@@ -102,19 +135,28 @@ function showBlueHeartPushError(error) {
                 word-break:break-word;
             "
         >
+
             ${message}
+
             ${code}
+
         </div>
 
     `);
+
 }
 
 
 /* =========================================================
-   FIREBASE SDK
+   LOAD FIREBASE SDK
 ========================================================= */
 
 async function loadBlueHeartFirebase() {
+
+    setBlueHeartPushStatus(
+        "Loading Firebase…"
+    );
+
 
     const firebaseAppModule =
         await import(
@@ -122,16 +164,21 @@ async function loadBlueHeartFirebase() {
         );
 
 
-    firebaseMessagingModule =
+    blueHeartMessagingModule =
         await import(
             "https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging.js"
         );
 
 
     return {
+
         firebaseAppModule,
-        firebaseMessagingModule
+
+        messagingModule:
+            blueHeartMessagingModule
+
     };
+
 }
 
 
@@ -151,42 +198,70 @@ async function getBlueHeartServiceWorker() {
         throw new Error(
             "This browser does not support service workers."
         );
+
     }
 
 
     setBlueHeartPushStatus(
-        "Checking Blue Heart service worker…"
+        "Preparing Blue Heart service worker…"
     );
 
+
+    /*
+        This is the working Blue Heart push worker.
+
+        updateViaCache: "none"
+        prevents Chrome from relying on an old
+        service-worker.js copy.
+    */
 
     const registration =
         await navigator.serviceWorker.register(
             "./service-worker.js?v=6pushfix1",
             {
-                scope: "./",
-                updateViaCache: "none"
+
+                scope:
+                    "./",
+
+                updateViaCache:
+                    "none"
+
             }
         );
 
+
+    /*
+        If already active, use it immediately.
+    */
 
     if (
         registration.active
     ) {
 
-        blueHeartServiceWorker =
+        blueHeartServiceWorkerRegistration =
             registration;
 
+
         return registration;
+
     }
 
+
+    /*
+        Otherwise wait for activation.
+    */
 
     const readyRegistration =
         await Promise.race([
 
             navigator.serviceWorker.ready,
 
+
             new Promise(
-                (_, reject) => {
+                (
+                    _,
+                    reject
+                ) => {
 
                     setTimeout(
                         () => {
@@ -207,38 +282,47 @@ async function getBlueHeartServiceWorker() {
         ]);
 
 
-    blueHeartServiceWorker =
+    blueHeartServiceWorkerRegistration =
         readyRegistration;
 
 
     return readyRegistration;
+
 }
 
 
 /* =========================================================
-   FIREBASE INITIALISATION
+   INITIALISE FIREBASE
 ========================================================= */
 
 async function initialiseBlueHeartFirebase() {
 
     const {
+
         firebaseAppModule,
-        firebaseMessagingModule:
-            messagingModule
+
+        messagingModule
+
     } =
         await loadBlueHeartFirebase();
 
 
     const {
+
         initializeApp,
+
         getApps
+
     } =
         firebaseAppModule;
 
 
     const {
+
         getMessaging,
+
         isSupported
+
     } =
         messagingModule;
 
@@ -247,46 +331,93 @@ async function initialiseBlueHeartFirebase() {
         await isSupported();
 
 
-    if (!supported) {
+    if (
+        !supported
+    ) {
 
         throw new Error(
             "Firebase Cloud Messaging is not supported by this browser."
         );
+
     }
 
 
-    let app;
+    let firebaseApp;
+
+
+    const currentApps =
+        getApps();
 
 
     if (
-        getApps().length > 0
+        currentApps.length > 0
     ) {
 
-        app =
-            getApps()[0];
+        firebaseApp =
+            currentApps[0];
 
     }
     else {
 
-        app =
+        firebaseApp =
             initializeApp(
                 BLUE_HEART_FIREBASE_CONFIG
             );
+
     }
 
 
     blueHeartMessaging =
         getMessaging(
-            app
+            firebaseApp
         );
 
 
     return blueHeartMessaging;
+
 }
 
 
 /* =========================================================
-   CONNECT BLUE HEART PUSH
+   SAVE FIREBASE INSTALLATION ID
+========================================================= */
+
+function saveBlueHeartFirebaseFid(
+    installationId
+) {
+
+    if (
+        !installationId
+    ) {
+
+        return;
+
+    }
+
+
+    localStorage.setItem(
+        BLUE_HEART_FIREBASE_FID_KEY,
+        installationId
+    );
+
+
+    console.log(
+        "Blue Heart Firebase Installation ID:",
+        installationId
+    );
+
+
+    /*
+        Refresh the FID display immediately.
+    */
+
+    showBlueHeartFirebaseFid();
+
+}
+
+
+/* =========================================================
+   CONNECT PUSH NOTIFICATIONS
 ========================================================= */
 
 async function connectBlueHeartPush() {
@@ -299,25 +430,42 @@ async function connectBlueHeartPush() {
 
     try {
 
-        if (button) {
+        /* -------------------------------------------------
+           BUTTON STATE
+        ------------------------------------------------- */
+
+        if (
+            button
+        ) {
 
             button.disabled =
                 true;
 
+
             button.textContent =
                 "Connecting…";
+
         }
 
+
+        /* -------------------------------------------------
+           HTTPS CHECK
+        ------------------------------------------------- */
 
         if (
             !window.isSecureContext
         ) {
 
             throw new Error(
-                "Blue Heart must be opened using its HTTPS GitHub Pages address."
+                "Blue Heart must be opened using the HTTPS GitHub Pages address."
             );
+
         }
 
+
+        /* -------------------------------------------------
+           NOTIFICATION SUPPORT
+        ------------------------------------------------- */
 
         if (
             !(
@@ -329,8 +477,13 @@ async function connectBlueHeartPush() {
             throw new Error(
                 "Notifications are not supported by this browser."
             );
+
         }
 
+
+        /* -------------------------------------------------
+           PERMISSION
+        ------------------------------------------------- */
 
         let permission =
             Notification.permission;
@@ -341,8 +494,14 @@ async function connectBlueHeartPush() {
             "granted"
         ) {
 
+            setBlueHeartPushStatus(
+                "Waiting for notification permission…"
+            );
+
+
             permission =
                 await Notification.requestPermission();
+
         }
 
 
@@ -354,11 +513,16 @@ async function connectBlueHeartPush() {
             throw new Error(
                 "Notification permission was not granted."
             );
+
         }
 
 
+        /* -------------------------------------------------
+           FIREBASE
+        ------------------------------------------------- */
+
         setBlueHeartPushStatus(
-            "Preparing Firebase…"
+            "Starting Firebase…"
         );
 
 
@@ -366,54 +530,55 @@ async function connectBlueHeartPush() {
             await initialiseBlueHeartFirebase();
 
 
+        /* -------------------------------------------------
+           SERVICE WORKER
+        ------------------------------------------------- */
+
         const serviceWorkerRegistration =
             await getBlueHeartServiceWorker();
 
 
         const {
+
             register,
+
             onRegistered
+
         } =
-            firebaseMessagingModule;
+            blueHeartMessagingModule;
 
 
-        try {
+        /* -------------------------------------------------
+           FID CALLBACK
 
-            onRegistered(
-                messaging,
-                installationId => {
+           Firebase calls this when registration finishes
+           and whenever the FID changes.
+        ------------------------------------------------- */
 
-                    if (
+        onRegistered(
+            messaging,
+            installationId => {
+
+                if (
+                    installationId
+                ) {
+
+                    saveBlueHeartFirebaseFid(
                         installationId
-                    ) {
-
-                        localStorage.setItem(
-                            "blueheart_firebase_installation_id",
-                            installationId
-                        );
-
-
-                        console.log(
-                            "Blue Heart FID:",
-                            installationId
-                        );
-                    }
+                    );
 
                 }
-            );
 
-        }
-        catch (error) {
+            }
+        );
 
-            console.warn(
-                "FID callback unavailable:",
-                error
-            );
-        }
 
+        /* -------------------------------------------------
+           REGISTER APP INSTANCE WITH FCM
+        ------------------------------------------------- */
 
         setBlueHeartPushStatus(
-            "Registering phone with Firebase…"
+            "Registering this phone with Firebase…"
         );
 
 
@@ -431,17 +596,27 @@ async function connectBlueHeartPush() {
         );
 
 
+        /* -------------------------------------------------
+           SAVE GENERAL SUCCESS STATE
+        ------------------------------------------------- */
+
         localStorage.setItem(
-            "blueheart_push_registered",
+            BLUE_HEART_PUSH_REGISTERED_KEY,
             "true"
         );
 
 
         localStorage.setItem(
-            "blueheart_push_registered_at",
+            BLUE_HEART_PUSH_REGISTERED_AT_KEY,
             new Date().toISOString()
         );
 
+
+        /* -------------------------------------------------
+           SUCCESS MESSAGE
+
+           FID callback may arrive just after register().
+        ------------------------------------------------- */
 
         setBlueHeartPushStatus(`
 
@@ -454,55 +629,90 @@ async function connectBlueHeartPush() {
             <span
                 style="
                     font-size:13px;
+                    line-height:1.5;
                 "
             >
-                Blue Heart is registered for
-                push notifications.
+
+                Firebase accepted this phone
+                for Blue Heart push notifications.
+
             </span>
 
         `);
 
 
-        if (button) {
+        if (
+            button
+        ) {
 
             button.textContent =
                 "Reconnect notifications";
+
         }
 
 
-        showTestTokenControls();
+        /*
+            Give the asynchronous FID callback
+            a moment to update the interface.
+        */
+
+        setTimeout(
+            showBlueHeartFirebaseFid,
+            1000
+        );
+
+
+        setTimeout(
+            showBlueHeartFirebaseFid,
+            3000
+        );
+
+
+        console.log(
+            "Blue Heart Firebase registration successful 🩵"
+        );
 
     }
-    catch (error) {
+    catch (
+        error
+    ) {
 
         showBlueHeartPushError(
             error
         );
 
 
-        if (button) {
+        if (
+            button
+        ) {
 
             button.textContent =
                 "Try connecting again";
+
         }
 
     }
     finally {
 
-        if (button) {
+        if (
+            button
+        ) {
 
             button.disabled =
                 false;
+
         }
+
     }
+
 }
 
 
 /* =========================================================
-   TEST TOKEN UI
+   FIREBASE DEVICE ID UI
 ========================================================= */
 
-function showTestTokenControls() {
+function ensureBlueHeartFirebaseFidArea() {
 
     const card =
         document.getElementById(
@@ -511,75 +721,41 @@ function showTestTokenControls() {
 
 
     if (
-        !card ||
-        document.getElementById(
-            "blueHeartTestTokenArea"
-        )
+        !card
     ) {
 
-        return;
+        return null;
+
     }
 
 
-    const area =
+    let area =
+        document.getElementById(
+            "blueHeartFidArea"
+        );
+
+
+    if (
+        area
+    ) {
+
+        return area;
+
+    }
+
+
+    area =
         document.createElement(
             "div"
         );
 
 
     area.id =
-        "blueHeartTestTokenArea";
+        "blueHeartFidArea";
 
 
     area.style.marginTop =
         "16px";
-
-
-    area.innerHTML = `
-
-        <hr
-            style="
-                opacity:0.2;
-                margin:16px 0;
-            "
-        >
-
-        <p class="eyebrow">
-            FIREBASE TEST
-        </p>
-
-        <p
-            class="muted"
-            style="
-                font-size:13px;
-            "
-        >
-            Generate a temporary FCM token
-            so we can send a test notification
-            from Firebase Console.
-        </p>
-
-        <button
-            id="generateBlueHeartToken"
-            class="secondary full"
-            type="button"
-            style="
-                margin-top:10px;
-            "
-        >
-            Generate test token
-        </button>
-
-        <div
-            id="blueHeartTokenResult"
-            style="
-                margin-top:12px;
-                font-size:12px;
-                word-break:break-all;
-            "
-        ></div>
-
-    `;
 
 
     card.appendChild(
@@ -587,248 +763,258 @@ function showTestTokenControls() {
     );
 
 
-    document
-        .getElementById(
-            "generateBlueHeartToken"
-        )
-        ?.addEventListener(
-            "click",
-            generateBlueHeartTestToken
-        );
+    return area;
+
 }
 
 
 /* =========================================================
-   GENERATE LEGACY TEST TOKEN
+   SHOW FIREBASE INSTALLATION ID
 ========================================================= */
 
-async function generateBlueHeartTestToken() {
+function showBlueHeartFirebaseFid() {
 
-    const result =
-        document.getElementById(
-            "blueHeartTokenResult"
+    const area =
+        ensureBlueHeartFirebaseFidArea();
+
+
+    if (
+        !area
+    ) {
+
+        return;
+
+    }
+
+
+    const fid =
+        localStorage.getItem(
+            BLUE_HEART_FIREBASE_FID_KEY
         );
+
+
+    /*
+        FID NOT AVAILABLE YET
+    */
+
+    if (
+        !fid
+    ) {
+
+        area.innerHTML = `
+
+            <hr
+                style="
+                    opacity:.2;
+                    margin:16px 0;
+                "
+            >
+
+            <p class="eyebrow">
+                FIREBASE DEVICE ID
+            </p>
+
+            <p
+                class="muted"
+                style="
+                    font-size:13px;
+                    line-height:1.5;
+                "
+            >
+
+                Device ID has not arrived yet.
+
+                <br><br>
+
+                Tap
+                <strong>
+                    Reconnect notifications
+                </strong>
+                once.
+
+            </p>
+
+        `;
+
+
+        return;
+
+    }
+
+
+    /*
+        FID AVAILABLE
+    */
+
+    area.innerHTML = `
+
+        <hr
+            style="
+                opacity:.2;
+                margin:16px 0;
+            "
+        >
+
+        <p class="eyebrow">
+            FIREBASE DEVICE ID
+        </p>
+
+        <p
+            class="muted"
+            style="
+                font-size:13px;
+                line-height:1.5;
+            "
+        >
+
+            This identifies this Blue Heart
+            installation for automatic reminders.
+
+        </p>
+
+        <textarea
+            id="blueHeartFidText"
+            readonly
+            spellcheck="false"
+            style="
+                width:100%;
+                min-height:90px;
+                margin-top:10px;
+                padding:10px;
+                box-sizing:border-box;
+                resize:none;
+                font-size:12px;
+                word-break:break-all;
+            "
+        ></textarea>
+
+        <button
+            id="copyBlueHeartFid"
+            class="secondary full"
+            type="button"
+            style="
+                margin-top:8px;
+            "
+        >
+
+            Copy device ID
+
+        </button>
+
+    `;
+
+
+    const textArea =
+        document.getElementById(
+            "blueHeartFidText"
+        );
+
+
+    if (
+        textArea
+    ) {
+
+        textArea.value =
+            fid;
+
+    }
+
+
+    const copyButton =
+        document.getElementById(
+            "copyBlueHeartFid"
+        );
+
+
+    if (
+        copyButton
+    ) {
+
+        copyButton.onclick =
+            copyBlueHeartFirebaseFid;
+
+    }
+
+}
+
+
+/* =========================================================
+   COPY FIREBASE INSTALLATION ID
+========================================================= */
+
+async function copyBlueHeartFirebaseFid() {
+
+    const fid =
+        localStorage.getItem(
+            BLUE_HEART_FIREBASE_FID_KEY
+        );
+
+
+    if (
+        !fid
+    ) {
+
+        return;
+
+    }
 
 
     const button =
         document.getElementById(
-            "generateBlueHeartToken"
+            "copyBlueHeartFid"
         );
-
-
-    try {
-
-        if (button) {
-
-            button.disabled =
-                true;
-
-            button.textContent =
-                "Generating…";
-        }
-
-
-        if (result) {
-
-            result.textContent =
-                "Requesting Firebase test token…";
-        }
-
-
-        if (
-            !blueHeartMessaging
-        ) {
-
-            await initialiseBlueHeartFirebase();
-        }
-
-
-        if (
-            !blueHeartServiceWorker
-        ) {
-
-            await getBlueHeartServiceWorker();
-        }
-
-
-        const {
-            getToken
-        } =
-            firebaseMessagingModule;
-
-
-        const token =
-            await getToken(
-                blueHeartMessaging,
-                {
-
-                    vapidKey:
-                        BLUE_HEART_VAPID_KEY,
-
-                    serviceWorkerRegistration:
-                        blueHeartServiceWorker
-
-                }
-            );
-
-
-        if (!token) {
-
-            throw new Error(
-                "Firebase did not return a test token."
-            );
-        }
-
-
-        localStorage.setItem(
-            "blueheart_fcm_test_token",
-            token
-        );
-
-
-        if (result) {
-
-            result.innerHTML = `
-
-                <strong>
-                    Test token ready ✓
-                </strong>
-
-                <textarea
-                    id="blueHeartTokenText"
-                    readonly
-                    style="
-                        width:100%;
-                        min-height:120px;
-                        margin-top:10px;
-                        padding:10px;
-                        box-sizing:border-box;
-                    "
-                >${token}</textarea>
-
-                <button
-                    id="copyBlueHeartToken"
-                    class="secondary full"
-                    type="button"
-                    style="
-                        margin-top:8px;
-                    "
-                >
-                    Copy test token
-                </button>
-
-            `;
-        }
-
-
-        document
-            .getElementById(
-                "copyBlueHeartToken"
-            )
-            ?.addEventListener(
-                "click",
-                copyBlueHeartTestToken
-            );
-
-
-        if (button) {
-
-            button.textContent =
-                "Generate again";
-        }
-
-    }
-    catch (error) {
-
-        console.error(
-            "Blue Heart token error:",
-            error
-        );
-
-
-        if (result) {
-
-            result.innerHTML = `
-
-                <strong>
-                    ❌ Token failed
-                </strong>
-
-                <br>
-
-                ${error?.message || String(error)}
-
-            `;
-        }
-
-
-        if (button) {
-
-            button.textContent =
-                "Try again";
-        }
-
-    }
-    finally {
-
-        if (button) {
-
-            button.disabled =
-                false;
-        }
-    }
-}
-
-
-/* =========================================================
-   COPY TOKEN
-========================================================= */
-
-async function copyBlueHeartTestToken() {
-
-    const token =
-        document.getElementById(
-            "blueHeartTokenText"
-        )?.value;
-
-
-    if (!token) {
-        return;
-    }
 
 
     try {
 
         await navigator.clipboard.writeText(
-            token
+            fid
         );
 
 
-        const button =
-            document.getElementById(
-                "copyBlueHeartToken"
-            );
-
-
-        if (button) {
+        if (
+            button
+        ) {
 
             button.textContent =
                 "Copied ✓";
+
         }
 
     }
-    catch (error) {
+    catch (
+        error
+    ) {
 
         console.error(
-            "Copy failed:",
+            "Could not copy Firebase device ID:",
             error
         );
 
 
+        const textArea =
+            document.getElementById(
+                "blueHeartFidText"
+            );
+
+
+        if (
+            textArea
+        ) {
+
+            textArea.focus();
+
+            textArea.select();
+
+        }
+
+
         alert(
-            "Select the token text and copy it manually."
+            "The device ID is selected. Copy it manually."
         );
+
     }
+
 }
 
 
@@ -840,7 +1026,13 @@ function restoreBlueHeartPushState() {
 
     const registered =
         localStorage.getItem(
-            "blueheart_push_registered"
+            BLUE_HEART_PUSH_REGISTERED_KEY
+        );
+
+
+    const button =
+        document.getElementById(
+            "connectBlueHeartPush"
         );
 
 
@@ -862,39 +1054,41 @@ function restoreBlueHeartPushState() {
                     font-size:13px;
                 "
             >
+
                 Blue Heart push is registered
                 on this phone.
+
             </span>
 
         `);
 
 
-        const button =
-            document.getElementById(
-                "connectBlueHeartPush"
-            );
-
-
-        if (button) {
+        if (
+            button
+        ) {
 
             button.textContent =
                 "Reconnect notifications";
+
         }
 
-
-        showTestTokenControls();
     }
     else {
 
         setBlueHeartPushStatus(
             "Ready to connect."
         );
+
     }
+
+
+    showBlueHeartFirebaseFid();
+
 }
 
 
 /* =========================================================
-   START
+   INITIALISE BLUE HEART PUSH UI
 ========================================================= */
 
 function initialiseBlueHeartPush() {
@@ -905,23 +1099,36 @@ function initialiseBlueHeartPush() {
         );
 
 
-    if (!button) {
+    if (
+        !button
+    ) {
 
         console.error(
-            "Blue Heart push button not found."
+            "Blue Heart push button was not found."
         );
 
+
         return;
+
     }
 
+
+    /*
+        Prevent duplicate click handlers.
+    */
 
     button.onclick =
         connectBlueHeartPush;
 
 
     restoreBlueHeartPushState();
+
 }
 
+
+/* =========================================================
+   START
+========================================================= */
 
 if (
     document.readyState ===
@@ -937,4 +1144,5 @@ if (
 else {
 
     initialiseBlueHeartPush();
+
 }
