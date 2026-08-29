@@ -8051,3 +8051,1230 @@ window.addEventListener(
 
     }
 );
+
+
+
+/* =========================================================
+   BLUE HEART V6
+   BACKGROUND STUDENT FOLLOW-UP PUSH REMINDERS
+   =========================================================
+   ADD THIS ENTIRE BLOCK TO THE VERY END OF THE EXISTING
+   WORKING script.js FILE.
+========================================================= */
+
+const BLUE_HEART_V6_REMINDER_BACKEND =
+    "https://blue-heart-reminders.sathyapriyaprar246.workers.dev";
+
+
+/* =========================================================
+   V6 SETTINGS STORAGE
+========================================================= */
+
+function blueHeartV6GetApiKey() {
+
+    try {
+
+        return String(
+            appData?.settings?.reminderApiKey
+            || ""
+        ).trim();
+
+    }
+    catch (error) {
+
+        console.warn(
+            "Could not read reminder API key:",
+            error
+        );
+
+        return "";
+
+    }
+
+}
+
+
+async function blueHeartV6SaveApiKey() {
+
+    const input =
+        document.getElementById(
+            "blueHeartV6ApiKey"
+        );
+
+
+    if (!input) {
+
+        return;
+
+    }
+
+
+    const value =
+        input.value.trim();
+
+
+    if (!value) {
+
+        showToast(
+            "Paste the reminder API key first."
+        );
+
+        return;
+
+    }
+
+
+    if (!appData.settings) {
+
+        appData.settings = {};
+
+    }
+
+
+    appData.settings.reminderApiKey =
+        value;
+
+
+    await saveData();
+
+
+    blueHeartV6UpdateStatus();
+
+
+    showToast(
+        "Reminder connection saved 🩵"
+    );
+
+}
+
+
+/* =========================================================
+   V6 API
+========================================================= */
+
+async function blueHeartV6ApiRequest(
+    path,
+    options = {}
+) {
+
+    const apiKey =
+        blueHeartV6GetApiKey();
+
+
+    if (!apiKey) {
+
+        throw new Error(
+            "Reminder API key has not been saved."
+        );
+
+    }
+
+
+    const headers = {
+
+        "Content-Type":
+            "application/json",
+
+        "X-Blue-Heart-Key":
+            apiKey,
+
+        ...(
+            options.headers
+            || {}
+        )
+
+    };
+
+
+    const response =
+        await fetch(
+
+            BLUE_HEART_V6_REMINDER_BACKEND
+            +
+            path,
+
+            {
+
+                ...options,
+
+                headers:
+                    headers
+
+            }
+
+        );
+
+
+    const text =
+        await response.text();
+
+
+    let result = {};
+
+
+    if (text) {
+
+        try {
+
+            result =
+                JSON.parse(
+                    text
+                );
+
+        }
+        catch (error) {
+
+            result = {
+
+                raw:
+                    text
+
+            };
+
+        }
+
+    }
+
+
+    if (!response.ok) {
+
+        throw new Error(
+
+            result.error
+            ||
+            (
+                "Reminder server error "
+                +
+                response.status
+            )
+
+        );
+
+    }
+
+
+    return result;
+
+}
+
+
+/* =========================================================
+   STUDENT INFORMATION
+========================================================= */
+
+function blueHeartV6StudentForFollowup(
+    followup
+) {
+
+    if (!followup) {
+
+        return null;
+
+    }
+
+
+    return appData.students.find(
+
+        student =>
+            student.id
+            ===
+            followup.studentId
+
+    ) || null;
+
+}
+
+
+/* =========================================================
+   CREATE PAYLOAD
+========================================================= */
+
+function blueHeartV6FollowupPayload(
+    followup
+) {
+
+    const student =
+        blueHeartV6StudentForFollowup(
+            followup
+        );
+
+
+    if (!student) {
+
+        throw new Error(
+            "Student record was not found."
+        );
+
+    }
+
+
+    return {
+
+        id:
+            followup.id,
+
+        date:
+            followup.date,
+
+        period:
+            followup.period
+            || "",
+
+        studentName:
+            student.name
+            || "Student",
+
+        studentClass:
+            student.className
+            || "",
+
+        action:
+            followup.action
+            || "Follow up",
+
+        note:
+            followup.note
+            || ""
+
+    };
+
+}
+
+
+/* =========================================================
+   SEND / UPDATE REMINDER
+========================================================= */
+
+async function blueHeartV6SyncFollowup(
+    followup,
+    showMessage = false
+) {
+
+    if (
+        !followup
+        ||
+        !followup.id
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        followup.completed
+    ) {
+
+        return blueHeartV6DeleteReminder(
+            followup.id,
+            showMessage
+        );
+
+    }
+
+
+    if (
+        !blueHeartV6GetApiKey()
+    ) {
+
+        if (showMessage) {
+
+            showToast(
+                "Save the reminder API key in Settings first."
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    try {
+
+        const payload =
+            blueHeartV6FollowupPayload(
+                followup
+            );
+
+
+        await blueHeartV6ApiRequest(
+
+            "/api/reminders",
+
+            {
+
+                method:
+                    "POST",
+
+                body:
+                    JSON.stringify(
+                        payload
+                    )
+
+            }
+
+        );
+
+
+        followup.pushSyncedAt =
+            new Date()
+                .toISOString();
+
+
+        followup.pushSyncError =
+            "";
+
+
+        await saveData();
+
+
+        if (showMessage) {
+
+            showToast(
+                "Follow-up reminder scheduled 🩵"
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Background reminder sync failed:",
+            error
+        );
+
+
+        followup.pushSyncError =
+            error?.message
+            ||
+            String(error);
+
+
+        await saveData();
+
+
+        if (showMessage) {
+
+            showToast(
+                "Follow-up saved locally, but push sync failed."
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+}
+
+
+/* =========================================================
+   DELETE BACKGROUND REMINDER
+========================================================= */
+
+async function blueHeartV6DeleteReminder(
+    followupId,
+    showMessage = false
+) {
+
+    if (!followupId) {
+
+        return false;
+
+    }
+
+
+    if (
+        !blueHeartV6GetApiKey()
+    ) {
+
+        return false;
+
+    }
+
+
+    try {
+
+        await blueHeartV6ApiRequest(
+
+            "/api/reminders/"
+            +
+            encodeURIComponent(
+                followupId
+            ),
+
+            {
+
+                method:
+                    "DELETE"
+
+            }
+
+        );
+
+
+        if (showMessage) {
+
+            showToast(
+                "Background reminder cancelled."
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Could not cancel reminder:",
+            error
+        );
+
+
+        if (showMessage) {
+
+            showToast(
+                "Could not cancel the background reminder."
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+}
+
+
+/* =========================================================
+   SYNC ALL PENDING FOLLOW-UPS
+========================================================= */
+
+async function blueHeartV6SyncPending() {
+
+    if (
+        !blueHeartV6GetApiKey()
+    ) {
+
+        showToast(
+            "Save the reminder API key first."
+        );
+
+        return;
+
+    }
+
+
+    const button =
+        document.getElementById(
+            "blueHeartV6SyncButton"
+        );
+
+
+    if (button) {
+
+        button.disabled =
+            true;
+
+        button.textContent =
+            "Syncing…";
+
+    }
+
+
+    const pending =
+        appData.followups.filter(
+
+            followup =>
+                followup
+                &&
+                followup.id
+                &&
+                followup.date
+                &&
+                !followup.completed
+
+        );
+
+
+    let success =
+        0;
+
+
+    let failed =
+        0;
+
+
+    for (
+        const followup
+        of pending
+    ) {
+
+        const result =
+            await blueHeartV6SyncFollowup(
+                followup,
+                false
+            );
+
+
+        if (result) {
+
+            success++;
+
+        }
+        else {
+
+            failed++;
+
+        }
+
+    }
+
+
+    if (button) {
+
+        button.disabled =
+            false;
+
+        button.textContent =
+            "Sync pending follow-ups";
+
+    }
+
+
+    if (
+        pending.length === 0
+    ) {
+
+        showToast(
+            "No pending follow-ups to sync."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        failed === 0
+    ) {
+
+        showToast(
+
+            success
+            +
+            (
+                success === 1
+                    ? " reminder synced 🩵"
+                    : " reminders synced 🩵"
+            )
+
+        );
+
+    }
+    else {
+
+        showToast(
+
+            success
+            +
+            " synced · "
+            +
+            failed
+            +
+            " could not sync"
+
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   TEST CONNECTION
+========================================================= */
+
+async function blueHeartV6TestConnection() {
+
+    const apiKey =
+        blueHeartV6GetApiKey();
+
+
+    if (!apiKey) {
+
+        showToast(
+            "Save the API key first."
+        );
+
+        return;
+
+    }
+
+
+    const status =
+        document.getElementById(
+            "blueHeartV6Status"
+        );
+
+
+    if (status) {
+
+        status.textContent =
+            "Checking connection…";
+
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                BLUE_HEART_V6_REMINDER_BACKEND
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (
+            result.ok
+            &&
+            result.deviceConfigured
+            &&
+            result.serviceAccountConfigured
+            &&
+            result.apiConfigured
+            &&
+            result.reminderStorageConfigured
+        ) {
+
+            if (status) {
+
+                status.textContent =
+                    "Connected 🩵 Background reminders are ready.";
+
+            }
+
+
+            showToast(
+                "Reminder backend connected 🩵"
+            );
+
+        }
+        else {
+
+            throw new Error(
+                "Backend configuration is incomplete."
+            );
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Connection test failed:",
+            error
+        );
+
+
+        if (status) {
+
+            status.textContent =
+                "Could not connect to the reminder backend.";
+
+        }
+
+
+        showToast(
+            "Connection test failed."
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SETTINGS CARD
+========================================================= */
+
+function blueHeartV6CreateSettingsCard() {
+
+    if (
+        document.getElementById(
+            "blueHeartV6ReminderCard"
+        )
+    ) {
+
+        blueHeartV6UpdateStatus();
+
+        return;
+
+    }
+
+
+    const settingsView =
+        document.getElementById(
+            "view-settings"
+        )
+        ||
+        document.getElementById(
+            "settings"
+        );
+
+
+    if (!settingsView) {
+
+        return;
+
+    }
+
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+
+    card.id =
+        "blueHeartV6ReminderCard";
+
+
+    card.className =
+        "card";
+
+
+    card.style.marginTop =
+        "16px";
+
+
+    card.innerHTML = `
+
+        <div
+            style="
+                display:flex;
+                gap:12px;
+                align-items:flex-start;
+            "
+        >
+
+            <div
+                style="
+                    font-size:26px;
+                    line-height:1;
+                "
+            >
+                🔔
+            </div>
+
+
+            <div
+                style="
+                    flex:1;
+                    min-width:0;
+                "
+            >
+
+                <h3
+                    style="
+                        margin:0 0 6px;
+                    "
+                >
+                    Follow-up push reminders
+                </h3>
+
+
+                <p
+                    style="
+                        margin:0 0 14px;
+                        line-height:1.45;
+                        opacity:.75;
+                    "
+                >
+                    Send counselling follow-up reminders
+                    to this phone even when Blue Heart
+                    is closed.
+                </p>
+
+
+                <label
+                    for="blueHeartV6ApiKey"
+                    style="
+                        display:block;
+                        margin-bottom:6px;
+                        font-weight:600;
+                    "
+                >
+                    Reminder API key
+                </label>
+
+
+                <input
+                    id="blueHeartV6ApiKey"
+                    type="password"
+                    autocomplete="off"
+                    placeholder="Paste BLUE_HEART_API_KEY"
+                    style="
+                        width:100%;
+                        box-sizing:border-box;
+                        margin-bottom:8px;
+                    "
+                >
+
+
+                <p
+                    id="blueHeartV6Status"
+                    style="
+                        margin:4px 0 12px;
+                        font-size:13px;
+                        opacity:.75;
+                        line-height:1.4;
+                    "
+                >
+                </p>
+
+
+                <div
+                    style="
+                        display:flex;
+                        gap:8px;
+                        flex-wrap:wrap;
+                    "
+                >
+
+                    <button
+                        id="blueHeartV6SaveButton"
+                        type="button"
+                    >
+                        Save connection
+                    </button>
+
+
+                    <button
+                        id="blueHeartV6TestButton"
+                        type="button"
+                    >
+                        Test
+                    </button>
+
+
+                    <button
+                        id="blueHeartV6SyncButton"
+                        type="button"
+                    >
+                        Sync pending follow-ups
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    settingsView.appendChild(
+        card
+    );
+
+
+    const input =
+        document.getElementById(
+            "blueHeartV6ApiKey"
+        );
+
+
+    if (input) {
+
+        input.value =
+            blueHeartV6GetApiKey();
+
+    }
+
+
+    document
+        .getElementById(
+            "blueHeartV6SaveButton"
+        )
+        ?.addEventListener(
+            "click",
+            blueHeartV6SaveApiKey
+        );
+
+
+    document
+        .getElementById(
+            "blueHeartV6TestButton"
+        )
+        ?.addEventListener(
+            "click",
+            blueHeartV6TestConnection
+        );
+
+
+    document
+        .getElementById(
+            "blueHeartV6SyncButton"
+        )
+        ?.addEventListener(
+            "click",
+            blueHeartV6SyncPending
+        );
+
+
+    blueHeartV6UpdateStatus();
+
+}
+
+
+/* =========================================================
+   SETTINGS STATUS
+========================================================= */
+
+function blueHeartV6UpdateStatus() {
+
+    const status =
+        document.getElementById(
+            "blueHeartV6Status"
+        );
+
+
+    if (!status) {
+
+        return;
+
+    }
+
+
+    if (
+        blueHeartV6GetApiKey()
+    ) {
+
+        status.textContent =
+            "Connection saved locally. Tap Test to verify it.";
+
+    }
+    else {
+
+        status.textContent =
+            "Not connected yet.";
+
+    }
+
+}
+
+
+/* =========================================================
+   AUTOMATICALLY SYNC NEW FOLLOW-UPS
+
+   We wrap the EXISTING saveFollowup() function.
+   The original function still performs all normal
+   Blue Heart local/encrypted saving.
+========================================================= */
+
+if (
+    typeof saveFollowup ===
+    "function"
+) {
+
+    const blueHeartV6OriginalSaveFollowup =
+        saveFollowup;
+
+
+    saveFollowup =
+        async function(event) {
+
+            const beforeIds =
+                new Set(
+
+                    appData.followups.map(
+                        followup =>
+                            followup.id
+                    )
+
+                );
+
+
+            const result =
+                await blueHeartV6OriginalSaveFollowup(
+                    event
+                );
+
+
+            const newlyCreated =
+                appData.followups.find(
+
+                    followup =>
+                        !beforeIds.has(
+                            followup.id
+                        )
+
+                );
+
+
+            if (newlyCreated) {
+
+                blueHeartV6SyncFollowup(
+                    newlyCreated,
+                    false
+                );
+
+            }
+
+
+            return result;
+
+        };
+
+}
+
+
+/* =========================================================
+   AUTOMATICALLY CANCEL COMPLETED FOLLOW-UPS
+
+   We wrap the EXISTING completeFollowup() function.
+========================================================= */
+
+if (
+    typeof completeFollowup ===
+    "function"
+) {
+
+    const blueHeartV6OriginalCompleteFollowup =
+        completeFollowup;
+
+
+    completeFollowup =
+        async function(id) {
+
+            const result =
+                await blueHeartV6OriginalCompleteFollowup(
+                    id
+                );
+
+
+            blueHeartV6DeleteReminder(
+                id,
+                false
+            );
+
+
+            return result;
+
+        };
+
+}
+
+
+/* =========================================================
+   SETTINGS NAVIGATION HOOK
+
+   Every time navigate() runs, ensure the reminder card
+   exists. Existing navigation behaviour is preserved.
+========================================================= */
+
+if (
+    typeof navigate ===
+    "function"
+) {
+
+    const blueHeartV6OriginalNavigate =
+        navigate;
+
+
+    navigate =
+        function(name) {
+
+            const result =
+                blueHeartV6OriginalNavigate(
+                    name
+                );
+
+
+            if (
+                name ===
+                "settings"
+            ) {
+
+                setTimeout(
+                    blueHeartV6CreateSettingsCard,
+                    0
+                );
+
+            }
+
+
+            return result;
+
+        };
+
+}
+
+
+/* =========================================================
+   INITIALISE
+========================================================= */
+
+function blueHeartV6Initialise() {
+
+    try {
+
+        blueHeartV6CreateSettingsCard();
+
+
+        console.log(
+            "Blue Heart V6 follow-up reminders ready 🩵"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Blue Heart V6 reminder setup failed:",
+            error
+        );
+
+    }
+
+}
+
+
+if (
+    document.readyState ===
+    "loading"
+) {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        blueHeartV6Initialise
+    );
+
+}
+else {
+
+    blueHeartV6Initialise();
+
+}
+
+
+/* =========================================================
+   END BLUE HEART V6 BACKGROUND REMINDERS
+========================================================= */
