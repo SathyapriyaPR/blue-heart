@@ -95,7 +95,36 @@ flowchart TD
 The frontend stores counselling records locally on the device, while the backend only handles the minimal reminder data needed for scheduled push notifications.
 This allows reminders to arrive even when the Blue Heart PWA is closed.
 
+```
+## 🧩 Challenges & Engineering Decisions
 
+### Local-First Privacy
+
+Student counselling information can be sensitive, so the application was designed to keep full student records on the user's device rather than storing the complete database on a remote server.
+
+Sensitive application data is encrypted using the Web Crypto API with AES-GCM encryption and PBKDF2-based key derivation.
+
+### Reliable Background Notifications
+
+Browser-based reminders normally depend on the application being open. To make follow-up reminders work when Blue Heart is closed, a serverless notification pipeline was implemented using Cloudflare Workers, Cloudflare KV, Cron Triggers, Firebase Cloud Messaging, and a service worker.
+
+### Minimal Backend Data
+
+The backend does not maintain the complete student database. Only the information required to process a scheduled reminder is sent to the reminder service.
+
+This keeps the main application local-first while still allowing background notifications.
+
+### Timetable-Based Scheduling
+
+School counselling availability depends on both the student's class and the school's period timetable. A timetable-matching layer was added so follow-ups can be associated with appropriate counselling periods instead of relying only on generic clock times.
+
+### PWA Caching and Updates
+
+Service-worker caching introduced challenges during development because older versions of application files could remain cached after deployment. The update strategy was adjusted so new application versions could be delivered without requiring users to clear their local application data.
+
+### Resilient Local Saving
+
+Follow-ups are saved locally before background reminder synchronization is attempted. If the network or reminder backend is unavailable, the counselling record remains saved locally instead of being lost.
 🗓️ Counselling Availability
 
 The application includes a school timetable-based counselling availability system.
@@ -128,6 +157,7 @@ Cloudflare KV
 Cloudflare Cron Triggers
 Hosting
 GitHub Pages
+
 📁 Project Structure
 blue-heart/
 ├── icon/
