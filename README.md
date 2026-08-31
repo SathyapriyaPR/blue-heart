@@ -67,6 +67,7 @@ Phone notification
 This allows reminders to arrive even when the Blue Heart PWA is closed.
 
 ## 🏗️ Architecture
+## 🏗️ Architecture
 
 ```mermaid
 flowchart TD
@@ -79,6 +80,9 @@ flowchart TD
     F --> G[Firebase Cloud Messaging]
     G --> H[Service Worker]
     H --> I[Phone Notification]
+```
+
+The frontend stores counselling records locally on the device, while the backend only handles the minimal reminder data needed for scheduled push notifications.
 
 🗓️ Counselling Availability
 
