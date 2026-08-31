@@ -66,6 +66,20 @@ Phone notification
 
 This allows reminders to arrive even when the Blue Heart PWA is closed.
 
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    A[Blue Heart PWA] --> B[Encrypted Local Storage]
+    A --> C[Counselling Timetable Logic]
+    A --> D[Cloudflare Worker API]
+
+    D --> E[Cloudflare KV]
+    E --> F[Cloudflare Cron Trigger]
+    F --> G[Firebase Cloud Messaging]
+    G --> H[Service Worker]
+    H --> I[Phone Notification]
+
 🗓️ Counselling Availability
 
 The application includes a school timetable-based counselling availability system.
