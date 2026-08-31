@@ -63,6 +63,8 @@ Firebase Cloud Messaging
 Service Worker
       ↓
 Phone notification
+Phone notification
+```
 
 This allows reminders to arrive even when the Blue Heart PWA is closed.
 
@@ -82,6 +84,8 @@ flowchart TD
 ```
 
 The frontend stores counselling records locally on the device, while the backend only handles the minimal reminder data needed for scheduled push notifications.
+This allows reminders to arrive even when the Blue Heart PWA is closed.
+
 
 🗓️ Counselling Availability
 
