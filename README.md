@@ -82,7 +82,16 @@ flowchart TD
     G --> H[Service Worker]
     H --> I[Phone Notification]
 ```
+## ⚙️ How It Works
 
+1. The counsellor creates and manages student records directly inside the PWA.
+2. Sensitive records are encrypted locally in the browser using the Web Crypto API.
+3. Follow-ups are scheduled using a date and counselling period.
+4. Minimal reminder data is sent to a Cloudflare Worker.
+5. Cloudflare KV stores pending reminder jobs.
+6. Cron Triggers periodically check for due reminders.
+7. Firebase Cloud Messaging delivers the notification to the device.
+8. The service worker displays the notification even when the app is closed.
 The frontend stores counselling records locally on the device, while the backend only handles the minimal reminder data needed for scheduled push notifications.
 This allows reminders to arrive even when the Blue Heart PWA is closed.
 
