@@ -125,6 +125,8 @@ Service-worker caching introduced challenges during development because older ve
 ### Resilient Local Saving
 
 Follow-ups are saved locally before background reminder synchronization is attempted. If the network or reminder backend is unavailable, the counselling record remains saved locally instead of being lost.
+
+```
 🗓️ Counselling Availability
 
 The application includes a school timetable-based counselling availability system.
