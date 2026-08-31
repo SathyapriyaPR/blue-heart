@@ -178,7 +178,12 @@ Upcoming counselling follow-ups organised by date and priority.
 ![Blue Heart Follow-ups](screenshots/followups.png)
 🚀 Live Demo
 
-The deployed application is available through GitHub Pages.
+
+🌐 **[Open Blue Heart](https://sathyapriyapr.github.io/blue-heart/)**
+
+Blue Heart is deployed as an installable Progressive Web App using GitHub Pages.
+
+> **Demo note:** The application starts with an empty local database. No real student records are included in this repository or deployment.
 
 The public repository does not contain real student records, private API keys, Firebase service-account credentials, or other sensitive user data.
 
