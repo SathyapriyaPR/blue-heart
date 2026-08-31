@@ -95,7 +95,7 @@ flowchart TD
 The frontend stores counselling records locally on the device, while the backend only handles the minimal reminder data needed for scheduled push notifications.
 This allows reminders to arrive even when the Blue Heart PWA is closed.
 
-```
+
 ## 🧩 Challenges & Engineering Decisions
 
 ### Local-First Privacy
@@ -126,7 +126,7 @@ Service-worker caching introduced challenges during development because older ve
 
 Follow-ups are saved locally before background reminder synchronization is attempted. If the network or reminder backend is unavailable, the counselling record remains saved locally instead of being lost.
 
-```
+
 🗓️ Counselling Availability
 
 The application includes a school timetable-based counselling availability system.
