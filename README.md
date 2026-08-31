@@ -67,7 +67,6 @@ Phone notification
 This allows reminders to arrive even when the Blue Heart PWA is closed.
 
 ## 🏗️ Architecture
-## 🏗️ Architecture
 
 ```mermaid
 flowchart TD
