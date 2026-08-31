@@ -134,6 +134,27 @@ Simple daily workflow
 Reduced repetitive data entry
 Gentle reminders
 Mobile-first interaction
+## 📸 Screenshots
+
+### Home
+Daily overview with students requiring attention, reminders, and quick actions.
+
+![Blue Heart Home](screenshots/home.png)
+
+### Student Management
+Search and manage student records, priorities, and counselling information.
+
+![Blue Heart Students](screenshots/students.png)
+
+### Counselling Availability
+Timetable-based availability helps identify suitable counselling periods for each class.
+
+![Blue Heart Counselling Slots](screenshots/slots.png)
+
+### Follow-ups
+Upcoming counselling follow-ups organised by date and priority.
+
+![Blue Heart Follow-ups](screenshots/followups.png)
 🚀 Live Demo
 
 The deployed application is available through GitHub Pages.
