@@ -10917,3 +10917,745 @@ document.addEventListener(
 /* =========================================================
    END BLUE HEART V6.1 🩵
 ========================================================= */
+/* =========================================================
+   BLUE HEART V6.2 🩵
+   STUDENT ABSENT → QUICK RESCHEDULE
+========================================================= */
+
+
+/* =========================================================
+   DATE HELPERS
+========================================================= */
+
+function blueHeartLocalDateString(date) {
+
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+function blueHeartDayName(date) {
+
+    return [
+
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+
+    ][
+        date.getDay()
+    ];
+
+}
+
+
+/* =========================================================
+   FIND NEXT COUNSELLING SLOT
+========================================================= */
+
+function blueHeartNextAvailableSlot(
+    studentClass,
+    fromDate = new Date()
+) {
+
+    const availableSlots =
+        getStudentCounsellingSlots(
+            studentClass
+        );
+
+
+    if (
+        !availableSlots.length
+    ) {
+
+        return null;
+
+    }
+
+
+    const periodOrder =
+        Object.keys(
+            BLUE_HEART_PERIODS
+        );
+
+
+    const start =
+        new Date(
+
+            fromDate.getFullYear(),
+
+            fromDate.getMonth(),
+
+            fromDate.getDate()
+
+        );
+
+
+    /*
+       Start from tomorrow because
+       "Absent" means the student is
+       unavailable for the current day.
+    */
+
+    for (
+        let offset = 1;
+        offset <= 21;
+        offset += 1
+    ) {
+
+        const candidate =
+            new Date(
+                start
+            );
+
+
+        candidate.setDate(
+            start.getDate()
+            +
+            offset
+        );
+
+
+        const dayName =
+            blueHeartDayName(
+                candidate
+            );
+
+
+        if (
+            !BLUE_HEART_SCHOOL_DAYS
+                .includes(
+                    dayName
+                )
+        ) {
+
+            continue;
+
+        }
+
+
+        const matches =
+            availableSlots
+
+                .filter(
+                    slot =>
+                        slot.day ===
+                        dayName
+                )
+
+                .sort(
+                    (
+                        a,
+                        b
+                    ) =>
+                        periodOrder
+                            .indexOf(
+                                a.period
+                            )
+                        -
+                        periodOrder
+                            .indexOf(
+                                b.period
+                            )
+                );
+
+
+        if (
+            matches.length
+        ) {
+
+            return {
+
+                date:
+                    blueHeartLocalDateString(
+                        candidate
+                    ),
+
+                day:
+                    dayName,
+
+                period:
+                    matches[0].period,
+
+                time:
+                    matches[0].time
+
+            };
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
+
+/* =========================================================
+   APPLY RESCHEDULE
+========================================================= */
+
+async function blueHeartRescheduleFollowup(
+    followup,
+    newDate,
+    newPeriod,
+    message
+) {
+
+    if (!followup) {
+
+        showToast(
+            "Follow-up not found"
+        );
+
+        return;
+
+    }
+
+
+    followup.date =
+        newDate;
+
+
+    followup.period =
+        newPeriod
+        ||
+        "";
+
+
+    followup.updatedAt =
+        new Date()
+            .toISOString();
+
+
+    followup.backgroundReminderSyncedAt =
+        "";
+
+
+    followup.backgroundReminderError =
+        "";
+
+
+    /*
+       Save locally first.
+    */
+
+    await saveData();
+
+
+    renderEverything();
+
+
+    /*
+       Send the same follow-up ID
+       back to the reminder service.
+    */
+
+    await syncFollowupReminder(
+
+        followup,
+
+        {
+            quiet: true
+        }
+
+    );
+
+
+    showToast(
+        message
+        ||
+        "Follow-up rescheduled"
+    );
+
+}
+
+
+/* =========================================================
+   STUDENT ABSENT
+========================================================= */
+
+async function blueHeartHandleAbsent(
+    followupId
+) {
+
+    const followup =
+        appData.followups.find(
+            item =>
+                item.id ===
+                followupId
+        );
+
+
+    if (!followup) {
+
+        showToast(
+            "Follow-up not found"
+        );
+
+        return;
+
+    }
+
+
+    const student =
+        getStudent(
+            followup.studentId
+        );
+
+
+    if (!student) {
+
+        showToast(
+            "Student record not found"
+        );
+
+        return;
+
+    }
+
+
+    const choice =
+        window.prompt(
+
+            `${student.name} is absent today.\n\n`
+            +
+            `Type:\n`
+            +
+            `1 = Next available counselling slot\n`
+            +
+            `2 = Tomorrow\n`
+            +
+            `3 = Choose another date\n\n`
+            +
+            `Enter 1, 2, or 3:`
+
+        );
+
+
+    if (
+        choice === null
+    ) {
+
+        return;
+
+    }
+
+
+    const cleaned =
+        choice.trim();
+
+
+    /* =====================================================
+       OPTION 1
+       NEXT ACTUAL COUNSELLING SLOT
+    ===================================================== */
+
+    if (
+        cleaned === "1"
+    ) {
+
+        const nextSlot =
+            blueHeartNextAvailableSlot(
+
+                student.className
+                ||
+                student.class
+                ||
+                "",
+
+                new Date()
+
+            );
+
+
+        if (!nextSlot) {
+
+            showToast(
+                "No later counselling slot was found for this class"
+            );
+
+            return;
+
+        }
+
+
+        await blueHeartRescheduleFollowup(
+
+            followup,
+
+            nextSlot.date,
+
+            nextSlot.period,
+
+            `Rescheduled to ${nextSlot.day} · ${formatFollowupPeriod(
+                nextSlot.period
+            )}`
+
+        );
+
+
+        return;
+
+    }
+
+
+    /* =====================================================
+       OPTION 2
+       TOMORROW
+    ===================================================== */
+
+    if (
+        cleaned === "2"
+    ) {
+
+        const tomorrow =
+            new Date();
+
+
+        tomorrow.setDate(
+            tomorrow.getDate()
+            +
+            1
+        );
+
+
+        await blueHeartRescheduleFollowup(
+
+            followup,
+
+            blueHeartLocalDateString(
+                tomorrow
+            ),
+
+            followup.period
+            ||
+            "",
+
+            "Moved to tomorrow"
+
+        );
+
+
+        return;
+
+    }
+
+
+    /* =====================================================
+       OPTION 3
+       CUSTOM DATE
+    ===================================================== */
+
+    if (
+        cleaned === "3"
+    ) {
+
+        const selected =
+            window.prompt(
+
+                "Enter the new date as YYYY-MM-DD:",
+
+                followup.date
+                ||
+                blueHeartLocalDateString(
+                    new Date()
+                )
+
+            );
+
+
+        if (
+            selected === null
+        ) {
+
+            return;
+
+        }
+
+
+        const trimmedDate =
+            selected.trim();
+
+
+        if (
+            !/^\d{4}-\d{2}-\d{2}$/
+                .test(
+                    trimmedDate
+                )
+        ) {
+
+            showToast(
+                "Use date format YYYY-MM-DD"
+            );
+
+            return;
+
+        }
+
+
+        await blueHeartRescheduleFollowup(
+
+            followup,
+
+            trimmedDate,
+
+            followup.period
+            ||
+            "",
+
+            "Follow-up rescheduled"
+
+        );
+
+
+        return;
+
+    }
+
+
+    showToast(
+        "Choose 1, 2, or 3"
+    );
+
+}
+
+
+/* =========================================================
+   V6.2 FOLLOW-UP CARD
+
+   Adds the Absent button while preserving
+   Edit / Done / Delete from V6.1.
+========================================================= */
+
+function followupCard(
+    item
+) {
+
+    const student =
+        getStudent(
+            item.studentId
+        );
+
+
+    if (!student) {
+
+        return "";
+
+    }
+
+
+    return `
+
+        <div class="today-item">
+
+            <div>
+
+                <strong>
+
+                    ${priorityIcon(
+                        item.priority
+                    )}
+
+                    ${escapeHTML(
+                        student.name
+                    )}
+
+                </strong>
+
+
+                <p>
+
+                    ${escapeHTML(
+                        item.action
+                        ||
+                        ""
+                    )}
+
+                </p>
+
+
+                <small class="muted">
+
+                    ${escapeHTML(
+                        student.className
+                        ||
+                        ""
+                    )}
+
+                    ${
+                        item.date
+
+                            ? " · "
+                              +
+                              prettyDate(
+                                  item.date
+                              )
+
+                            : ""
+                    }
+
+                    ${
+                        item.period
+
+                            ? " · "
+                              +
+                              escapeHTML(
+                                  formatFollowupPeriod(
+                                      item.period
+                                  )
+                              )
+
+                            : ""
+                    }
+
+                </small>
+
+
+                ${
+                    item.note
+
+                        ? `
+
+                            <p
+                                class="muted preserve-lines"
+                                style="margin-top:6px;"
+                            >
+
+                                ${escapeHTML(
+                                    item.note
+                                )}
+
+                            </p>
+
+                          `
+
+                        : ""
+                }
+
+            </div>
+
+
+            <div
+                style="
+                    display:flex;
+                    gap:6px;
+                    flex-wrap:wrap;
+                    justify-content:flex-end;
+                    align-items:center;
+                "
+            >
+
+                <button
+                    class="secondary small"
+                    data-edit-followup="${item.id}"
+                    type="button"
+                >
+                    ✏️ Edit
+                </button>
+
+
+                <button
+                    class="secondary small"
+                    data-absent-followup="${item.id}"
+                    type="button"
+                >
+                    😷 Absent
+                </button>
+
+
+                <button
+                    class="secondary small"
+                    data-complete="${item.id}"
+                    type="button"
+                >
+                    ✓ Done
+                </button>
+
+
+                <button
+                    class="text-btn"
+                    data-delete-followup="${item.id}"
+                    type="button"
+                >
+                    🗑 Delete
+                </button>
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   ABSENT CLICK EVENT
+========================================================= */
+
+document.addEventListener(
+
+    "click",
+
+    async event => {
+
+
+        const absentButton =
+            event.target.closest(
+                "[data-absent-followup]"
+            );
+
+
+        if (
+            !absentButton
+        ) {
+
+            return;
+
+        }
+
+
+        event.preventDefault();
+
+        event.stopPropagation();
+
+
+        await blueHeartHandleAbsent(
+            absentButton
+                .dataset
+                .absentFollowup
+        );
+
+    }
+
+);
+
+
+/* =========================================================
+   END BLUE HEART V6.2 🩵
+========================================================= */
