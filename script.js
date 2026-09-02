@@ -11659,3 +11659,933 @@ document.addEventListener(
 /* =========================================================
    END BLUE HEART V6.2 🩵
 ========================================================= */
+/* =========================================================
+   BLUE HEART V6.3 🩵
+   FINISH WORKDAY
+
+   Adds:
+   - Automatic end-of-day summary
+   - Finish workday button
+   - Reopen workday
+   - Tomorrow preview
+   - No new manual checklist
+========================================================= */
+
+
+/* =========================================================
+   WORKDAY DATA
+========================================================= */
+
+function blueHeartEnsureWorkdayData() {
+
+    if (
+        !appData.workdayClosures
+        ||
+        typeof appData.workdayClosures !== "object"
+    ) {
+
+        appData.workdayClosures = {};
+
+    }
+
+}
+
+
+function blueHeartTodayClosed() {
+
+    blueHeartEnsureWorkdayData();
+
+    return Boolean(
+        appData.workdayClosures[
+            todayString()
+        ]
+    );
+
+}
+
+
+/* =========================================================
+   TOMORROW DATE
+========================================================= */
+
+function blueHeartTomorrowString() {
+
+    const tomorrow =
+        new Date();
+
+    tomorrow.setDate(
+        tomorrow.getDate() + 1
+    );
+
+
+    /*
+       Reuse the V6.2 helper when available.
+    */
+
+    if (
+        typeof blueHeartLocalDateString ===
+        "function"
+    ) {
+
+        return blueHeartLocalDateString(
+            tomorrow
+        );
+
+    }
+
+
+    const year =
+        tomorrow.getFullYear();
+
+    const month =
+        String(
+            tomorrow.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const day =
+        String(
+            tomorrow.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+/* =========================================================
+   BUILD AUTOMATIC WORKDAY SUMMARY
+========================================================= */
+
+function blueHeartGetWorkdaySummary() {
+
+    blueHeartEnsureWorkdayData();
+
+
+    const today =
+        todayString();
+
+
+    const tomorrow =
+        blueHeartTomorrowString();
+
+
+    const groups =
+        getFollowupGroups();
+
+
+    const unfinishedToday = [
+
+        ...groups.overdue,
+        ...groups.today
+
+    ];
+
+
+    const urgent =
+        unfinishedToday.filter(
+            followup =>
+                followup.priority ===
+                "red"
+        );
+
+
+    const quickNotes =
+        appData.quickNotes
+            .filter(
+                note =>
+                    !note.done
+            );
+
+
+    const tomorrowFollowups =
+        appData.followups
+
+            .filter(
+                followup =>
+                    !followup.completed
+                    &&
+                    followup.date ===
+                    tomorrow
+            );
+
+
+    const schoolLogged =
+        Boolean(
+            appData.schoolLog[
+                today
+            ]
+        );
+
+
+    const vitaminB =
+        Boolean(
+            appData.personal
+                ?.vitaminB
+        );
+
+
+    const magnesium =
+        Boolean(
+            appData.personal
+                ?.magnesium
+        );
+
+
+    return {
+
+        today,
+        tomorrow,
+
+        schoolLogged,
+
+        unfinishedToday,
+        urgent,
+
+        quickNotes,
+
+        tomorrowFollowups,
+
+        vitaminB,
+
+        magnesium,
+
+        closed:
+            blueHeartTodayClosed()
+
+    };
+
+}
+
+
+/* =========================================================
+   STATUS ROW
+========================================================= */
+
+function blueHeartWorkdayRow(
+    okay,
+    text,
+    detail = ""
+) {
+
+    return `
+
+        <div
+            style="
+                display:flex;
+                gap:10px;
+                align-items:flex-start;
+                padding:9px 0;
+                border-bottom:
+                    1px solid
+                    rgba(0,0,0,.05);
+            "
+        >
+
+            <span
+                style="
+                    min-width:22px;
+                "
+            >
+
+                ${okay ? "✓" : "○"}
+
+            </span>
+
+
+            <div>
+
+                <strong>
+
+                    ${escapeHTML(
+                        text
+                    )}
+
+                </strong>
+
+
+                ${
+                    detail
+
+                        ? `
+
+                            <small
+                                class="muted"
+                                style="
+                                    display:block;
+                                    margin-top:2px;
+                                "
+                            >
+
+                                ${escapeHTML(
+                                    detail
+                                )}
+
+                            </small>
+
+                          `
+
+                        : ""
+                }
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   ENSURE WORKDAY CARD EXISTS
+========================================================= */
+
+function blueHeartEnsureWorkdayCard() {
+
+    if (
+        $("blueHeartWorkdayCard")
+    ) {
+
+        return;
+
+    }
+
+
+    const todayView =
+        $("view-today");
+
+
+    if (!todayView) {
+
+        return;
+
+    }
+
+
+    const card =
+        document.createElement(
+            "section"
+        );
+
+
+    card.id =
+        "blueHeartWorkdayCard";
+
+    card.className =
+        "card";
+
+    card.style.marginBottom =
+        "14px";
+
+
+    /*
+       Put it near the personal Rose message
+       when that card exists.
+    */
+
+    const roseCard =
+        $("roseMessageCard");
+
+
+    if (
+        roseCard
+        &&
+        roseCard.parentElement
+    ) {
+
+        roseCard.insertAdjacentElement(
+            "afterend",
+            card
+        );
+
+    }
+
+    else {
+
+        todayView.prepend(
+            card
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   RENDER FINISH WORKDAY CARD
+========================================================= */
+
+function blueHeartRenderWorkdayCard() {
+
+    blueHeartEnsureWorkdayCard();
+
+
+    const card =
+        $("blueHeartWorkdayCard");
+
+
+    if (!card) {
+
+        return;
+
+    }
+
+
+    const summary =
+        blueHeartGetWorkdaySummary();
+
+
+    /* =====================================================
+       WORKDAY ALREADY CLOSED
+    ===================================================== */
+
+    if (
+        summary.closed
+    ) {
+
+        const closedRecord =
+            appData.workdayClosures[
+                summary.today
+            ];
+
+
+        card.innerHTML = `
+
+            <div class="section-head">
+
+                <div>
+
+                    <p class="eyebrow">
+                        WORKDAY
+                    </p>
+
+                    <h3>
+                        🌙 Workday finished
+                    </h3>
+
+                </div>
+
+                <span class="pill done">
+                    Closed ✓
+                </span>
+
+            </div>
+
+
+            <p
+                class="muted"
+                style="
+                    margin-top:8px;
+                "
+            >
+
+                You've closed today's work.
+                Anything unfinished can wait
+                here safely until you return.
+
+            </p>
+
+
+            <div
+                style="
+                    margin-top:14px;
+                    padding:12px;
+                    border-radius:14px;
+                    background:
+                        rgba(255,255,255,.65);
+                "
+            >
+
+                <strong>
+                    Tomorrow
+                </strong>
+
+
+                <p
+                    class="muted"
+                    style="
+                        margin-top:5px;
+                    "
+                >
+
+                    ${
+                        summary.tomorrowFollowups
+                            .length
+                    }
+                    follow-up${
+                        summary.tomorrowFollowups
+                            .length === 1
+                            ? ""
+                            : "s"
+                    }
+                    scheduled.
+
+                </p>
+
+            </div>
+
+
+            <p
+                class="muted"
+                style="
+                    margin-top:12px;
+                "
+            >
+
+                🩵 You do not need to keep
+                today's list in your head now.
+
+            </p>
+
+
+            <button
+                class="secondary full"
+                data-reopen-workday
+                type="button"
+                style="
+                    margin-top:12px;
+                "
+            >
+
+                Reopen today
+
+            </button>
+
+        `;
+
+
+        return;
+
+    }
+
+
+    /* =====================================================
+       OPEN WORKDAY
+    ===================================================== */
+
+    const followupOkay =
+        summary.unfinishedToday
+            .length === 0;
+
+
+    const urgentOkay =
+        summary.urgent
+            .length === 0;
+
+
+    const quickOkay =
+        summary.quickNotes
+            .length === 0;
+
+
+    card.innerHTML = `
+
+        <div class="section-head">
+
+            <div>
+
+                <p class="eyebrow">
+                    END OF DAY
+                </p>
+
+                <h3>
+                    🌙 Finish workday
+                </h3>
+
+            </div>
+
+        </div>
+
+
+        <p
+            class="muted"
+            style="
+                margin-top:6px;
+                margin-bottom:8px;
+            "
+        >
+
+            Blue Heart checked today's
+            loose ends for you.
+
+        </p>
+
+
+        ${blueHeartWorkdayRow(
+
+            summary.schoolLogged,
+
+            summary.schoolLogged
+                ? "School app logged"
+                : "School app not logged yet"
+
+        )}
+
+
+        ${blueHeartWorkdayRow(
+
+            urgentOkay,
+
+            urgentOkay
+                ? "No urgent follow-ups waiting"
+                : `${summary.urgent.length} urgent follow-up${
+                    summary.urgent.length === 1
+                        ? ""
+                        : "s"
+                  } waiting`
+
+        )}
+
+
+        ${blueHeartWorkdayRow(
+
+            followupOkay,
+
+            followupOkay
+                ? "Today's follow-ups are clear"
+                : `${summary.unfinishedToday.length} follow-up${
+                    summary.unfinishedToday.length === 1
+                        ? ""
+                        : "s"
+                  } still open`,
+
+            summary.unfinishedToday.length
+                ? "They stay safely in Blue Heart."
+                : ""
+
+        )}
+
+
+        ${blueHeartWorkdayRow(
+
+            quickOkay,
+
+            quickOkay
+                ? "Quick Capture is clear"
+                : `${summary.quickNotes.length} quick note${
+                    summary.quickNotes.length === 1
+                        ? ""
+                        : "s"
+                  } still waiting`,
+
+            summary.quickNotes.length
+                ? "You can finish or review them tomorrow."
+                : ""
+
+        )}
+
+
+        <div
+            style="
+                margin-top:14px;
+                padding:12px;
+                border-radius:14px;
+                background:
+                    rgba(255,255,255,.62);
+            "
+        >
+
+            <p class="eyebrow">
+                TOMORROW
+            </p>
+
+
+            <strong>
+
+                ${
+                    summary.tomorrowFollowups
+                        .length
+                }
+
+                follow-up${
+                    summary.tomorrowFollowups
+                        .length === 1
+                        ? ""
+                        : "s"
+                }
+
+            </strong>
+
+
+            <p
+                class="muted"
+                style="
+                    margin-top:4px;
+                "
+            >
+
+                already scheduled
+
+            </p>
+
+        </div>
+
+
+        <div
+            style="
+                margin-top:14px;
+                padding:12px;
+                border-radius:14px;
+                background:
+                    rgba(255,255,255,.50);
+            "
+        >
+
+            <p class="eyebrow">
+                PERSONAL
+            </p>
+
+
+            <p
+                style="
+                    margin-top:5px;
+                "
+            >
+
+                ${
+                    summary.vitaminB
+                        ? "✓"
+                        : "○"
+                }
+                Vitamin B
+
+                &nbsp;&nbsp;
+
+                ${
+                    summary.magnesium
+                        ? "✓"
+                        : "○"
+                }
+                Magnesium
+
+            </p>
+
+        </div>
+
+
+        <button
+            class="primary full"
+            data-finish-workday
+            type="button"
+            style="
+                margin-top:14px;
+            "
+        >
+
+            Finish for today 🩵
+
+        </button>
+
+    `;
+
+}
+
+
+/* =========================================================
+   FINISH WORKDAY
+========================================================= */
+
+async function blueHeartFinishWorkday() {
+
+    blueHeartEnsureWorkdayData();
+
+
+    const summary =
+        blueHeartGetWorkdaySummary();
+
+
+    /*
+       If something is still open,
+       we do NOT block Rose.
+
+       We simply make sure she knows
+       the items are still waiting.
+    */
+
+    if (
+        summary.unfinishedToday.length
+        ||
+        summary.quickNotes.length
+        ||
+        !summary.schoolLogged
+    ) {
+
+        const confirmed =
+            window.confirm(
+
+                "There are still a few things open.\n\n"
+                +
+                "Blue Heart will keep them safely for tomorrow.\n\n"
+                +
+                "Finish workday anyway?"
+
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+    }
+
+
+    appData.workdayClosures[
+        todayString()
+    ] = {
+
+        closedAt:
+            new Date()
+                .toISOString()
+
+    };
+
+
+    await saveData();
+
+
+    renderEverything();
+
+
+    showToast(
+        "Workday finished 🩵"
+    );
+
+}
+
+
+/* =========================================================
+   REOPEN WORKDAY
+========================================================= */
+
+async function blueHeartReopenWorkday() {
+
+    blueHeartEnsureWorkdayData();
+
+
+    delete appData.workdayClosures[
+        todayString()
+    ];
+
+
+    await saveData();
+
+
+    renderEverything();
+
+
+    showToast(
+        "Today reopened"
+    );
+
+}
+
+
+/* =========================================================
+   ADD V6.3 TO NORMAL RENDERING
+
+   Preserve the current Blue Heart renderer,
+   then add the new workday card afterwards.
+========================================================= */
+
+const blueHeartV63OriginalRenderEverything =
+    renderEverything;
+
+
+renderEverything =
+    function () {
+
+        blueHeartV63OriginalRenderEverything();
+
+
+        if (!currentPin) {
+
+            return;
+
+        }
+
+
+        blueHeartRenderWorkdayCard();
+
+    };
+
+
+/* =========================================================
+   V6.3 EVENTS
+========================================================= */
+
+document.addEventListener(
+
+    "click",
+
+    async event => {
+
+
+        const finishButton =
+            event.target.closest(
+                "[data-finish-workday]"
+            );
+
+
+        if (
+            finishButton
+        ) {
+
+            event.preventDefault();
+
+            await blueHeartFinishWorkday();
+
+            return;
+
+        }
+
+
+        const reopenButton =
+            event.target.closest(
+                "[data-reopen-workday]"
+            );
+
+
+        if (
+            reopenButton
+        ) {
+
+            event.preventDefault();
+
+            await blueHeartReopenWorkday();
+
+        }
+
+    }
+
+);
+
+
+/* =========================================================
+   RENDER ONCE IF APP IS ALREADY OPEN
+
+   Normally renderEverything() handles this.
+========================================================= */
+
+if (
+    typeof currentPin !== "undefined"
+    &&
+    currentPin
+) {
+
+    blueHeartRenderWorkdayCard();
+
+}
+
+
+/* =========================================================
+   END BLUE HEART V6.3 🩵
+========================================================= */
