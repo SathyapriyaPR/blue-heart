@@ -12618,3 +12618,279 @@ if (
 /* =========================================================
    END BLUE HEART FINAL POLISH 🩵
 ========================================================= */
+/* =========================================================
+   BLUE HEART — EMOJI POLISH 🩵
+   Gives interface emojis a soft sky-blue halo.
+   Semantic emoji colours themselves are preserved.
+========================================================= */
+
+
+function blueHeartPolishEmojis(
+    root = document.body
+) {
+
+    if (!root) {
+        return;
+    }
+
+
+    const emojiRegex =
+        /(\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?)*)/gu;
+
+
+    const walker =
+        document.createTreeWalker(
+
+            root,
+
+            NodeFilter.SHOW_TEXT
+
+        );
+
+
+    const textNodes =
+        [];
+
+
+    while (
+        walker.nextNode()
+    ) {
+
+        const node =
+            walker.currentNode;
+
+
+        const parent =
+            node.parentElement;
+
+
+        if (!parent) {
+            continue;
+        }
+
+
+        /*
+           Never alter code, form fields,
+           scripts or an already-polished emoji.
+        */
+
+        if (
+
+            parent.closest(
+                "script, style, textarea, input, select, option, code, pre, .blueheart-emoji"
+            )
+
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            emojiRegex.test(
+                node.nodeValue
+            )
+        ) {
+
+            textNodes.push(
+                node
+            );
+
+        }
+
+
+        emojiRegex.lastIndex =
+            0;
+
+    }
+
+
+    textNodes.forEach(
+        node => {
+
+            const fragment =
+                document.createDocumentFragment();
+
+
+            const pieces =
+                node.nodeValue
+                    .split(
+                        emojiRegex
+                    );
+
+
+            pieces.forEach(
+                piece => {
+
+                    if (!piece) {
+                        return;
+                    }
+
+
+                    emojiRegex.lastIndex =
+                        0;
+
+
+                    if (
+                        emojiRegex.test(
+                            piece
+                        )
+                    ) {
+
+                        const span =
+                            document.createElement(
+                                "span"
+                            );
+
+
+                        span.className =
+                            "blueheart-emoji";
+
+
+                        if (
+                            piece.includes(
+                                "🩵"
+                            )
+                            ||
+                            piece.includes(
+                                "💙"
+                            )
+                        ) {
+
+                            span.classList.add(
+                                "blue-heart"
+                            );
+
+                        }
+
+
+                        span.textContent =
+                            piece;
+
+
+                        fragment.appendChild(
+                            span
+                        );
+
+                    }
+
+                    else {
+
+                        fragment.appendChild(
+
+                            document.createTextNode(
+                                piece
+                            )
+
+                        );
+
+                    }
+
+                }
+
+            );
+
+
+            node.parentNode
+                ?.replaceChild(
+                    fragment,
+                    node
+                );
+
+        }
+
+    );
+
+}
+
+
+/* =========================================================
+   APPLY AFTER BLUE HEART RENDERS
+========================================================= */
+
+function blueHeartScheduleEmojiPolish() {
+
+    window.requestAnimationFrame(
+        () => {
+
+            blueHeartPolishEmojis();
+
+        }
+    );
+
+}
+
+
+/*
+   Run once when this script loads.
+*/
+
+blueHeartScheduleEmojiPolish();
+
+
+/*
+   Blue Heart dynamically redraws cards,
+   student records, follow-ups, messages,
+   etc. Watch for those changes and polish
+   newly-created emojis too.
+*/
+
+const blueHeartEmojiObserver =
+    new MutationObserver(
+        mutations => {
+
+            let needsPolish =
+                false;
+
+
+            for (
+                const mutation
+                of mutations
+            ) {
+
+                if (
+                    mutation.addedNodes
+                        .length
+                ) {
+
+                    needsPolish =
+                        true;
+
+                    break;
+
+                }
+
+            }
+
+
+            if (
+                needsPolish
+            ) {
+
+                blueHeartScheduleEmojiPolish();
+
+            }
+
+        }
+    );
+
+
+blueHeartEmojiObserver.observe(
+
+    document.body,
+
+    {
+        childList:
+            true,
+
+        subtree:
+            true
+    }
+
+);
+
+
+/* =========================================================
+   END EMOJI POLISH 🩵
+========================================================= */
