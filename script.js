@@ -9278,3 +9278,1642 @@ else {
 /* =========================================================
    END BLUE HEART V6 BACKGROUND REMINDERS
 ========================================================= */
+/* =========================================================
+   BLUE HEART V6.1 🩵
+   EDIT + DELETE RECORDS
+
+   Adds:
+   - Edit follow-up
+   - Delete follow-up + cancel remote reminder
+   - Edit session
+   - Delete session
+   - Delete student + related records
+
+   Existing encrypted data remains compatible.
+========================================================= */
+
+
+/* =========================================================
+   EDITING STATE
+========================================================= */
+
+let blueHeartEditingFollowupId = "";
+let blueHeartEditingSessionId = "";
+
+
+/* =========================================================
+   SMALL V6.1 HELPERS
+========================================================= */
+
+function blueHeartSetSubmitLabel(
+    formId,
+    text
+) {
+
+    const form =
+        $(formId);
+
+    if (!form) {
+        return;
+    }
+
+    const submit =
+        form.querySelector(
+            'button[type="submit"], input[type="submit"]'
+        );
+
+    if (!submit) {
+        return;
+    }
+
+    if (
+        submit.tagName
+            .toLowerCase() ===
+        "input"
+    ) {
+
+        submit.value =
+            text;
+
+    }
+
+    else {
+
+        submit.textContent =
+            text;
+
+    }
+
+}
+
+
+/* =========================================================
+   WRAP NORMAL FOLLOW-UP OPEN
+
+   Opening a normal follow-up must clear edit mode.
+========================================================= */
+
+const blueHeartV61OriginalOpenFollowup =
+    openFollowup;
+
+
+openFollowup =
+    function (
+        studentId = ""
+    ) {
+
+        blueHeartEditingFollowupId =
+            "";
+
+        blueHeartV61OriginalOpenFollowup(
+            studentId
+        );
+
+        blueHeartSetSubmitLabel(
+            "followupForm",
+            "Add follow-up"
+        );
+
+    };
+
+
+/* =========================================================
+   OPEN EXISTING FOLLOW-UP FOR EDITING
+========================================================= */
+
+function openFollowupForEdit(
+    followupId
+) {
+
+    const followup =
+        appData.followups.find(
+            item =>
+                item.id ===
+                followupId
+        );
+
+    if (!followup) {
+
+        showToast(
+            "Follow-up not found"
+        );
+
+        return;
+
+    }
+
+
+    blueHeartEditingFollowupId =
+        followup.id;
+
+
+    /*
+       Use the original opener so that
+       edit mode is not reset.
+    */
+
+    blueHeartV61OriginalOpenFollowup(
+        followup.studentId
+    );
+
+
+    populateStudentSelects();
+
+    ensureFollowupPeriodField();
+
+
+    if (
+        $("followupStudentSelect")
+    ) {
+
+        $("followupStudentSelect")
+            .value =
+            followup.studentId
+            || "";
+
+    }
+
+
+    if (
+        $("followupDate")
+    ) {
+
+        $("followupDate")
+            .value =
+            followup.date
+            ||
+            todayString();
+
+    }
+
+
+    if (
+        $("followupPriority")
+    ) {
+
+        $("followupPriority")
+            .value =
+            followup.priority
+            ||
+            "yellow";
+
+    }
+
+
+    if (
+        $("followupPeriod")
+    ) {
+
+        $("followupPeriod")
+            .value =
+            followup.period
+            ||
+            "";
+
+    }
+
+
+    if (
+        $("followupAction")
+    ) {
+
+        $("followupAction")
+            .value =
+            followup.action
+            ||
+            "";
+
+    }
+
+
+    if (
+        $("followupNote")
+    ) {
+
+        $("followupNote")
+            .value =
+            followup.note
+            ||
+            "";
+
+    }
+
+
+    blueHeartSetSubmitLabel(
+        "followupForm",
+        "Save changes"
+    );
+
+}
+
+
+/* =========================================================
+   SAVE FOLLOW-UP
+   Handles BOTH create and edit.
+========================================================= */
+
+async function saveFollowup(
+    event
+) {
+
+    event.preventDefault();
+
+
+    const studentId =
+        $("followupStudentSelect")
+            .value;
+
+
+    const action =
+        $("followupAction")
+            .value
+            .trim();
+
+
+    if (
+        !studentId
+        ||
+        !action
+    ) {
+
+        showToast(
+            "Complete the follow-up details"
+        );
+
+        return;
+
+    }
+
+
+    /*
+       =============================================
+       EDIT EXISTING FOLLOW-UP
+       =============================================
+    */
+
+    if (
+        blueHeartEditingFollowupId
+    ) {
+
+        const followup =
+            appData.followups.find(
+                item =>
+                    item.id ===
+                    blueHeartEditingFollowupId
+            );
+
+
+        if (!followup) {
+
+            showToast(
+                "Follow-up could not be found"
+            );
+
+            blueHeartEditingFollowupId =
+                "";
+
+            return;
+
+        }
+
+
+        followup.studentId =
+            studentId;
+
+        followup.date =
+            $("followupDate")
+                .value
+            ||
+            todayString();
+
+        followup.priority =
+            $("followupPriority")
+                .value;
+
+        followup.period =
+            $("followupPeriod")
+                ?.value
+            ||
+            "";
+
+        followup.action =
+            action;
+
+        followup.note =
+            $("followupNote")
+                .value
+                .trim();
+
+        followup.updatedAt =
+            new Date()
+                .toISOString();
+
+        followup.backgroundReminderSyncedAt =
+            "";
+
+        followup.backgroundReminderError =
+            "";
+
+
+        await saveData();
+
+
+        closeModal(
+            "followupModal"
+        );
+
+
+        blueHeartEditingFollowupId =
+            "";
+
+
+        renderEverything();
+
+
+        showToast(
+            "Follow-up updated ✓"
+        );
+
+
+        /*
+           Same follow-up ID is sent again.
+
+           The backend therefore updates the
+           reminder instead of creating a
+           separate duplicate ID.
+        */
+
+        await syncFollowupReminder(
+            followup
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+       =============================================
+       CREATE NEW FOLLOW-UP
+       =============================================
+    */
+
+    const followup = {
+
+        id:
+            makeId(),
+
+        studentId:
+            studentId,
+
+        date:
+            $("followupDate")
+                .value
+            ||
+            todayString(),
+
+        priority:
+            $("followupPriority")
+                .value,
+
+        period:
+            $("followupPeriod")
+                ?.value
+            ||
+            "",
+
+        action:
+            action,
+
+        note:
+            $("followupNote")
+                .value
+                .trim(),
+
+        completed:
+            false,
+
+        createdAt:
+            new Date()
+                .toISOString()
+
+    };
+
+
+    appData.followups.push(
+        followup
+    );
+
+
+    await saveData();
+
+
+    closeModal(
+        "followupModal"
+    );
+
+
+    renderEverything();
+
+
+    showToast(
+        "Follow-up added"
+    );
+
+
+    await syncFollowupReminder(
+        followup
+    );
+
+}
+
+
+/* =========================================================
+   DELETE FOLLOW-UP
+========================================================= */
+
+async function deleteFollowup(
+    followupId
+) {
+
+    const followup =
+        appData.followups.find(
+            item =>
+                item.id ===
+                followupId
+        );
+
+
+    if (!followup) {
+
+        showToast(
+            "Follow-up not found"
+        );
+
+        return;
+
+    }
+
+
+    const student =
+        getStudent(
+            followup.studentId
+        );
+
+
+    const name =
+        student?.name
+        ||
+        "this student";
+
+
+    const confirmed =
+        window.confirm(
+            `Delete this follow-up for ${name}?\n\n`
+            +
+            `This removes it from Blue Heart and cancels its scheduled reminder.`
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    /*
+       Try cancelling the remote reminder first.
+    */
+
+    const remoteCancelled =
+        await deleteFollowupReminder(
+            followup.id,
+            {
+                quiet: true
+            }
+        );
+
+
+    appData.followups =
+        appData.followups.filter(
+            item =>
+                item.id !==
+                followup.id
+        );
+
+
+    await saveData();
+
+
+    renderEverything();
+
+
+    if (
+        remoteCancelled
+        ||
+        !reminderApiConfigured()
+    ) {
+
+        showToast(
+            "Follow-up deleted"
+        );
+
+    }
+
+    else {
+
+        showToast(
+            "Deleted locally; reminder server could not be reached"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   V6.1 FOLLOW-UP CARD
+
+   Replaces the old Done-only card.
+========================================================= */
+
+function followupCard(
+    item
+) {
+
+    const student =
+        getStudent(
+            item.studentId
+        );
+
+
+    if (!student) {
+        return "";
+    }
+
+
+    return `
+
+        <div class="today-item">
+
+            <div>
+
+                <strong>
+
+                    ${priorityIcon(
+                        item.priority
+                    )}
+
+                    ${escapeHTML(
+                        student.name
+                    )}
+
+                </strong>
+
+
+                <p>
+
+                    ${escapeHTML(
+                        item.action
+                        ||
+                        ""
+                    )}
+
+                </p>
+
+
+                <small class="muted">
+
+                    ${
+                        escapeHTML(
+                            student.className
+                            ||
+                            ""
+                        )
+                    }
+
+                    ${
+                        item.date
+                            ? " · "
+                              +
+                              prettyDate(
+                                  item.date
+                              )
+                            : ""
+                    }
+
+                    ${
+                        item.period
+                            ? " · "
+                              +
+                              escapeHTML(
+                                  formatFollowupPeriod(
+                                      item.period
+                                  )
+                              )
+                            : ""
+                    }
+
+                </small>
+
+
+                ${
+                    item.note
+
+                        ? `
+
+                            <p
+                                class="muted preserve-lines"
+                                style="
+                                    margin-top:6px;
+                                "
+                            >
+
+                                ${escapeHTML(
+                                    item.note
+                                )}
+
+                            </p>
+
+                          `
+
+                        : ""
+                }
+
+            </div>
+
+
+            <div
+                style="
+                    display:flex;
+                    gap:6px;
+                    flex-wrap:wrap;
+                    justify-content:flex-end;
+                    align-items:center;
+                "
+            >
+
+                <button
+                    class="secondary small"
+                    data-edit-followup="${item.id}"
+                    type="button"
+                >
+                    ✏️ Edit
+                </button>
+
+
+                <button
+                    class="secondary small"
+                    data-complete="${item.id}"
+                    type="button"
+                >
+                    ✓ Done
+                </button>
+
+
+                <button
+                    class="text-btn"
+                    data-delete-followup="${item.id}"
+                    type="button"
+                >
+                    🗑 Delete
+                </button>
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   WRAP NORMAL SESSION OPEN
+
+   Normal session = clear edit mode.
+========================================================= */
+
+const blueHeartV61OriginalOpenSession =
+    openSession;
+
+
+openSession =
+    function (
+        studentId = ""
+    ) {
+
+        blueHeartEditingSessionId =
+            "";
+
+        blueHeartV61OriginalOpenSession(
+            studentId
+        );
+
+
+        blueHeartSetSubmitLabel(
+            "sessionForm",
+            "Save session"
+        );
+
+    };
+
+
+/* =========================================================
+   OPEN SESSION FOR EDITING
+========================================================= */
+
+function openSessionForEdit(
+    sessionId
+) {
+
+    const session =
+        appData.sessions.find(
+            item =>
+                item.id ===
+                sessionId
+        );
+
+
+    if (!session) {
+
+        showToast(
+            "Session not found"
+        );
+
+        return;
+
+    }
+
+
+    blueHeartEditingSessionId =
+        session.id;
+
+
+    blueHeartV61OriginalOpenSession(
+        session.studentId
+    );
+
+
+    populateStudentSelects();
+
+
+    if (
+        $("sessionStudentSelect")
+    ) {
+
+        $("sessionStudentSelect")
+            .value =
+            session.studentId
+            ||
+            "";
+
+    }
+
+
+    if (
+        $("sessionDate")
+    ) {
+
+        $("sessionDate")
+            .value =
+            session.date
+            ||
+            todayString();
+
+    }
+
+
+    if (
+        $("sessionSummary")
+    ) {
+
+        $("sessionSummary")
+            .value =
+            session.summary
+            ||
+            "";
+
+    }
+
+
+    if (
+        $("sessionNextAction")
+    ) {
+
+        $("sessionNextAction")
+            .value =
+            session.nextAction
+            ||
+            "";
+
+    }
+
+
+    blueHeartSetSubmitLabel(
+        "sessionForm",
+        "Save changes"
+    );
+
+}
+
+
+/* =========================================================
+   SAVE SESSION
+   Handles create + edit.
+========================================================= */
+
+async function saveSession(
+    event
+) {
+
+    event.preventDefault();
+
+
+    const studentId =
+        $("sessionStudentSelect")
+            .value;
+
+
+    if (!studentId) {
+
+        showToast(
+            "Choose a student"
+        );
+
+        return;
+
+    }
+
+
+    /*
+       =============================================
+       EDIT
+       =============================================
+    */
+
+    if (
+        blueHeartEditingSessionId
+    ) {
+
+        const session =
+            appData.sessions.find(
+                item =>
+                    item.id ===
+                    blueHeartEditingSessionId
+            );
+
+
+        if (!session) {
+
+            showToast(
+                "Session could not be found"
+            );
+
+            blueHeartEditingSessionId =
+                "";
+
+            return;
+
+        }
+
+
+        session.studentId =
+            studentId;
+
+        session.date =
+            $("sessionDate")
+                .value
+            ||
+            todayString();
+
+        session.summary =
+            $("sessionSummary")
+                .value
+                .trim();
+
+        session.nextAction =
+            $("sessionNextAction")
+                .value
+                .trim();
+
+        session.updatedAt =
+            new Date()
+                .toISOString();
+
+
+        await saveData();
+
+
+        closeModal(
+            "sessionModal"
+        );
+
+
+        blueHeartEditingSessionId =
+            "";
+
+
+        renderEverything();
+
+
+        showToast(
+            "Session updated ✓"
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+       =============================================
+       CREATE
+       =============================================
+    */
+
+    const session = {
+
+        id:
+            makeId(),
+
+        studentId:
+            studentId,
+
+        date:
+            $("sessionDate")
+                .value
+            ||
+            todayString(),
+
+        summary:
+            $("sessionSummary")
+                .value
+                .trim(),
+
+        nextAction:
+            $("sessionNextAction")
+                .value
+                .trim(),
+
+        createdAt:
+            new Date()
+                .toISOString()
+
+    };
+
+
+    appData.sessions.push(
+        session
+    );
+
+
+    lastSessionStudentId =
+        studentId;
+
+
+    await saveData();
+
+
+    closeModal(
+        "sessionModal"
+    );
+
+
+    renderEverything();
+
+
+    showFollowupPrompt(
+        studentId
+    );
+
+}
+
+
+/* =========================================================
+   DELETE SESSION
+========================================================= */
+
+async function deleteSession(
+    sessionId
+) {
+
+    const session =
+        appData.sessions.find(
+            item =>
+                item.id ===
+                sessionId
+        );
+
+
+    if (!session) {
+
+        showToast(
+            "Session not found"
+        );
+
+        return;
+
+    }
+
+
+    const confirmed =
+        window.confirm(
+            "Delete this session?\n\n"
+            +
+            "This cannot be undone unless you restore an older encrypted backup."
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    const studentId =
+        session.studentId;
+
+
+    appData.sessions =
+        appData.sessions.filter(
+            item =>
+                item.id !==
+                sessionId
+        );
+
+
+    await saveData();
+
+
+    renderEverything();
+
+
+    showToast(
+        "Session deleted"
+    );
+
+
+    /*
+       Reopen the student's detail page
+       so Rose stays where she was.
+    */
+
+    if (
+        getStudent(
+            studentId
+        )
+    ) {
+
+        openStudentDetails(
+            studentId
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DELETE STUDENT
+
+   Related sessions and follow-ups are also removed.
+========================================================= */
+
+async function deleteStudent(
+    studentId
+) {
+
+    const student =
+        getStudent(
+            studentId
+        );
+
+
+    if (!student) {
+
+        showToast(
+            "Student not found"
+        );
+
+        return;
+
+    }
+
+
+    const sessions =
+        appData.sessions.filter(
+            item =>
+                item.studentId ===
+                studentId
+        );
+
+
+    const followups =
+        appData.followups.filter(
+            item =>
+                item.studentId ===
+                studentId
+        );
+
+
+    const notes =
+        appData.quickNotes.filter(
+            item =>
+                item.studentId ===
+                studentId
+        );
+
+
+    const warning =
+        `Delete ${student.name} permanently?\n\n`
+        +
+        `This also removes:\n`
+        +
+        `• ${sessions.length} session(s)\n`
+        +
+        `• ${followups.length} follow-up(s)\n`
+        +
+        `• ${notes.length} attached quick note(s)\n\n`
+        +
+        `This action is intended for records entered by mistake.`;
+
+
+    const confirmed =
+        window.confirm(
+            warning
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    /*
+       Cancel every unfinished remote reminder.
+    */
+
+    for (
+        const followup of followups
+    ) {
+
+        if (
+            !followup.completed
+        ) {
+
+            await deleteFollowupReminder(
+                followup.id,
+                {
+                    quiet: true
+                }
+            );
+
+        }
+
+    }
+
+
+    appData.students =
+        appData.students.filter(
+            item =>
+                item.id !==
+                studentId
+        );
+
+
+    appData.sessions =
+        appData.sessions.filter(
+            item =>
+                item.studentId !==
+                studentId
+        );
+
+
+    appData.followups =
+        appData.followups.filter(
+            item =>
+                item.studentId !==
+                studentId
+        );
+
+
+    appData.quickNotes =
+        appData.quickNotes.filter(
+            item =>
+                item.studentId !==
+                studentId
+        );
+
+
+    await saveData();
+
+
+    closeModal(
+        "studentDetailModal"
+    );
+
+
+    renderEverything();
+
+
+    showToast(
+        "Student record deleted"
+    );
+
+}
+
+
+/* =========================================================
+   STUDENT DETAIL V6.1 ADDITIONS
+
+   Keep original student-detail screen and append:
+   - Delete student
+   - Manage sessions
+========================================================= */
+
+const blueHeartV61OriginalOpenStudentDetails =
+    openStudentDetails;
+
+
+openStudentDetails =
+    function (
+        id
+    ) {
+
+        blueHeartV61OriginalOpenStudentDetails(
+            id
+        );
+
+
+        const student =
+            getStudent(
+                id
+            );
+
+
+        const container =
+            $("studentDetail");
+
+
+        if (
+            !student
+            ||
+            !container
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+           =============================================
+           DELETE STUDENT BUTTON
+           =============================================
+        */
+
+        const mainButtons =
+            container.querySelector(
+                ".button-row"
+            );
+
+
+        if (
+            mainButtons
+            &&
+            !container.querySelector(
+                "[data-delete-student]"
+            )
+        ) {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.className =
+                "text-btn";
+
+            button.type =
+                "button";
+
+            button.dataset
+                .deleteStudent =
+                student.id;
+
+            button.textContent =
+                "🗑 Delete student";
+
+
+            mainButtons.appendChild(
+                button
+            );
+
+        }
+
+
+        /*
+           =============================================
+           MANAGE SESSIONS
+           =============================================
+        */
+
+        const sessions =
+            appData.sessions
+
+                .filter(
+                    item =>
+                        item.studentId ===
+                        id
+                )
+
+                .sort(
+                    (a, b) =>
+                        b.date.localeCompare(
+                            a.date
+                        )
+                );
+
+
+        const section =
+            document.createElement(
+                "section"
+            );
+
+
+        section.className =
+            "detail-block";
+
+        section.id =
+            "v61ManageSessions";
+
+
+        section.innerHTML = `
+
+            <p class="eyebrow">
+                MANAGE SESSIONS
+            </p>
+
+            <h3>
+                ✏️ Edit or remove sessions
+            </h3>
+
+
+            ${
+                sessions.length
+
+                    ? sessions
+
+                        .map(
+                            session => `
+
+                                <div
+                                    class="mini-record"
+                                    style="
+                                        margin-top:10px;
+                                    "
+                                >
+
+                                    <strong>
+
+                                        ${prettyDate(
+                                            session.date
+                                        )}
+
+                                    </strong>
+
+
+                                    <p
+                                        class="preserve-lines"
+                                    >
+
+                                        ${escapeHTML(
+                                            session.summary
+                                            ||
+                                            "No summary."
+                                        )}
+
+                                    </p>
+
+
+                                    ${
+                                        session.nextAction
+
+                                            ? `
+
+                                                <p class="muted">
+
+                                                    Next:
+                                                    ${escapeHTML(
+                                                        session.nextAction
+                                                    )}
+
+                                                </p>
+
+                                              `
+
+                                            : ""
+                                    }
+
+
+                                    <div
+                                        style="
+                                            display:flex;
+                                            gap:8px;
+                                            flex-wrap:wrap;
+                                            margin-top:8px;
+                                        "
+                                    >
+
+                                        <button
+                                            class="secondary small"
+                                            data-edit-session="${session.id}"
+                                            type="button"
+                                        >
+                                            ✏️ Edit
+                                        </button>
+
+
+                                        <button
+                                            class="text-btn"
+                                            data-delete-session="${session.id}"
+                                            type="button"
+                                        >
+                                            🗑 Delete
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            `
+                        )
+
+                        .join("")
+
+                    : `
+
+                        <p class="muted">
+                            No sessions logged yet.
+                        </p>
+
+                      `
+            }
+
+        `;
+
+
+        container.appendChild(
+            section
+        );
+
+    };
+
+
+/* =========================================================
+   V6.1 CLICK HANDLING
+========================================================= */
+
+document.addEventListener(
+    "click",
+    async event => {
+
+
+        /*
+           EDIT FOLLOW-UP
+        */
+
+        const editFollowup =
+            event.target.closest(
+                "[data-edit-followup]"
+            );
+
+
+        if (
+            editFollowup
+        ) {
+
+            openFollowupForEdit(
+                editFollowup
+                    .dataset
+                    .editFollowup
+            );
+
+            return;
+
+        }
+
+
+        /*
+           DELETE FOLLOW-UP
+        */
+
+        const deleteFollowupButton =
+            event.target.closest(
+                "[data-delete-followup]"
+            );
+
+
+        if (
+            deleteFollowupButton
+        ) {
+
+            await deleteFollowup(
+                deleteFollowupButton
+                    .dataset
+                    .deleteFollowup
+            );
+
+            return;
+
+        }
+
+
+        /*
+           EDIT SESSION
+        */
+
+        const editSessionButton =
+            event.target.closest(
+                "[data-edit-session]"
+            );
+
+
+        if (
+            editSessionButton
+        ) {
+
+            closeModal(
+                "studentDetailModal"
+            );
+
+
+            openSessionForEdit(
+                editSessionButton
+                    .dataset
+                    .editSession
+            );
+
+            return;
+
+        }
+
+
+        /*
+           DELETE SESSION
+        */
+
+        const deleteSessionButton =
+            event.target.closest(
+                "[data-delete-session]"
+            );
+
+
+        if (
+            deleteSessionButton
+        ) {
+
+            await deleteSession(
+                deleteSessionButton
+                    .dataset
+                    .deleteSession
+            );
+
+            return;
+
+        }
+
+
+        /*
+           DELETE STUDENT
+        */
+
+        const deleteStudentButton =
+            event.target.closest(
+                "[data-delete-student]"
+            );
+
+
+        if (
+            deleteStudentButton
+        ) {
+
+            await deleteStudent(
+                deleteStudentButton
+                    .dataset
+                    .deleteStudent
+            );
+
+            return;
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   END BLUE HEART V6.1 🩵
+========================================================= */
