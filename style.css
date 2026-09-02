@@ -3305,3 +3305,657 @@ select {
     }
 
 }
+/* =========================================================
+   BLUE HEART — FINAL POLISH 🩵
+   Elegant / friendly / mobile-first
+
+   IMPORTANT:
+   - Existing Blue Heart colours remain intact.
+   - No functionality is changed.
+   - Designed as an override layer.
+========================================================= */
+
+
+/* =========================================================
+   BASE
+========================================================= */
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family:
+        Inter,
+        ui-rounded,
+        "SF Pro Rounded",
+        "Segoe UI",
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        sans-serif;
+
+    line-height: 1.5;
+    letter-spacing: 0.004em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+
+/* =========================================================
+   HEADINGS
+========================================================= */
+
+h1,
+h2,
+h3 {
+    line-height: 1.2;
+    letter-spacing: -0.018em;
+}
+
+h1 {
+    font-weight: 750;
+}
+
+h2 {
+    font-weight: 700;
+}
+
+h3 {
+    font-weight: 680;
+}
+
+.eyebrow {
+    letter-spacing: 0.09em;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   CARDS
+========================================================= */
+
+.card {
+    border-radius: 22px;
+
+    box-shadow:
+        0 2px 5px rgba(0, 0, 0, 0.025),
+        0 10px 30px rgba(0, 0, 0, 0.045);
+
+    transition:
+        transform 180ms ease,
+        box-shadow 180ms ease;
+
+    position: relative;
+}
+
+.card:hover {
+    box-shadow:
+        0 3px 7px rgba(0, 0, 0, 0.03),
+        0 14px 34px rgba(0, 0, 0, 0.055);
+}
+
+
+/* =========================================================
+   ROSE MESSAGE — A LITTLE MORE SPECIAL
+========================================================= */
+
+#roseMessageCard {
+    border-radius: 24px !important;
+
+    padding-top: 20px;
+    padding-bottom: 20px;
+
+    box-shadow:
+        0 4px 10px rgba(0, 0, 0, 0.025),
+        0 14px 38px rgba(0, 0, 0, 0.055);
+
+    animation:
+        blueHeartMessageIn
+        520ms
+        cubic-bezier(.22, .8, .3, 1)
+        both;
+}
+
+#roseMessageCard::before {
+    content: "✦";
+
+    position: absolute;
+    right: 18px;
+    top: 13px;
+
+    font-size: 14px;
+
+    opacity: 0.28;
+
+    pointer-events: none;
+}
+
+#roseMessageCard p {
+    line-height: 1.65;
+}
+
+
+/* =========================================================
+   LIST / RECORD ITEMS
+========================================================= */
+
+.today-item,
+.detail-item,
+.mini-record,
+.check-row {
+    border-radius: 16px;
+
+    transition:
+        transform 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.today-item,
+.detail-item,
+.mini-record {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.today-item strong,
+.detail-item strong,
+.mini-record strong {
+    line-height: 1.35;
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+button,
+.primary,
+.secondary,
+.text-btn {
+    font-family: inherit;
+
+    -webkit-tap-highlight-color:
+        transparent;
+
+    touch-action: manipulation;
+}
+
+.primary,
+.secondary {
+    border-radius: 14px;
+
+    min-height: 44px;
+
+    font-weight: 650;
+
+    transition:
+        transform 120ms ease,
+        box-shadow 160ms ease,
+        opacity 160ms ease;
+}
+
+.primary:not(.small),
+.secondary:not(.small) {
+    padding-top: 11px;
+    padding-bottom: 11px;
+}
+
+.primary:active,
+.secondary:active,
+.text-btn:active {
+    transform: scale(0.975);
+}
+
+button.small,
+.small {
+    min-height: 38px;
+
+    border-radius: 12px;
+
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.text-btn {
+    min-height: 38px;
+
+    border-radius: 10px;
+
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+
+/* =========================================================
+   FORM CONTROLS
+========================================================= */
+
+input,
+textarea,
+select {
+    font: inherit;
+
+    border-radius: 14px;
+
+    min-height: 46px;
+
+    transition:
+        box-shadow 160ms ease,
+        transform 160ms ease;
+
+    -webkit-tap-highlight-color:
+        transparent;
+}
+
+textarea {
+    min-height: 96px;
+
+    line-height: 1.55;
+
+    resize: vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.5),
+        0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+label {
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   CHECKBOX ROWS
+========================================================= */
+
+.check-row {
+    min-height: 52px;
+
+    padding-top: 10px;
+    padding-bottom: 10px;
+
+    cursor: pointer;
+}
+
+.check-row input[type="checkbox"] {
+    min-width: 20px;
+    min-height: 20px;
+}
+
+
+/* =========================================================
+   PILLS
+========================================================= */
+
+.pill,
+.status-pill {
+    border-radius: 999px;
+
+    font-weight: 650;
+
+    letter-spacing: 0.01em;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   MODALS
+========================================================= */
+
+.modal {
+    padding:
+        18px
+        14px
+        calc(18px + env(safe-area-inset-bottom));
+}
+
+.modal-card {
+    width: min(100%, 520px);
+
+    border-radius: 26px;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.15);
+
+    animation:
+        blueHeartModalIn
+        240ms
+        cubic-bezier(.22, .8, .3, 1)
+        both;
+}
+
+.close-btn {
+    min-width: 42px;
+    min-height: 42px;
+
+    border-radius: 50%;
+
+    font-size: 24px;
+
+    -webkit-tap-highlight-color:
+        transparent;
+}
+
+
+/* =========================================================
+   QUICK ACTIONS
+========================================================= */
+
+.quick-actions {
+    gap: 10px;
+}
+
+.quick-actions button {
+    min-height: 48px;
+
+    border-radius: 16px;
+}
+
+
+/* =========================================================
+   EMPTY STATES
+========================================================= */
+
+.empty-state {
+    padding-top: 28px;
+    padding-bottom: 28px;
+
+    border-radius: 20px;
+
+    text-align: center;
+}
+
+.empty-state h3 {
+    margin-top: 8px;
+}
+
+.empty-state .muted,
+.empty-state p {
+    max-width: 300px;
+
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/* =========================================================
+   SECTION HEADERS
+========================================================= */
+
+.section-head {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 12px;
+}
+
+.section-head > div {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   BOTTOM NAVIGATION
+========================================================= */
+
+.bottom-nav {
+    grid-template-columns:
+        repeat(6, minmax(0, 1fr));
+
+    padding-left:
+        max(7px, env(safe-area-inset-left));
+
+    padding-right:
+        max(7px, env(safe-area-inset-right));
+
+    padding-bottom:
+        max(7px, env(safe-area-inset-bottom));
+
+    box-shadow:
+        0 -8px 32px rgba(0, 0, 0, 0.055);
+
+    backdrop-filter:
+        blur(14px);
+
+    -webkit-backdrop-filter:
+        blur(14px);
+}
+
+.bottom-nav button {
+    min-width: 0;
+
+    min-height: 54px;
+
+    padding:
+        7px
+        2px;
+
+    border-radius: 14px;
+
+    -webkit-tap-highlight-color:
+        transparent;
+
+    transition:
+        transform 130ms ease,
+        opacity 150ms ease;
+}
+
+.bottom-nav button:active {
+    transform: scale(0.94);
+}
+
+
+/* =========================================================
+   SCROLLING
+========================================================= */
+
+* {
+    scrollbar-width: thin;
+}
+
+button,
+input,
+textarea,
+select {
+    max-width: 100%;
+}
+
+
+/* =========================================================
+   MOBILE PHONE POLISH
+========================================================= */
+
+@media (max-width: 600px) {
+
+    body {
+        font-size: 15px;
+    }
+
+
+    .card {
+        border-radius: 19px;
+    }
+
+
+    #roseMessageCard {
+        border-radius: 21px !important;
+    }
+
+
+    .section-head {
+        gap: 8px;
+    }
+
+
+    .today-item {
+        gap: 10px;
+    }
+
+
+    .today-item > div:first-child {
+        min-width: 0;
+
+        flex: 1 1 100%;
+    }
+
+
+    .today-item p,
+    .today-item small,
+    .detail-item p {
+        overflow-wrap: anywhere;
+    }
+
+
+    .form-grid {
+        gap: 12px;
+    }
+
+
+    .modal {
+        align-items: flex-end;
+    }
+
+
+    .modal-card {
+        max-height: 91dvh;
+
+        overflow-y: auto;
+
+        border-bottom-left-radius: 22px;
+        border-bottom-right-radius: 22px;
+    }
+
+
+    .bottom-nav {
+        gap: 2px;
+    }
+
+
+    .bottom-nav button {
+        font-size: 11px;
+        line-height: 1.2;
+    }
+
+
+    button.small,
+    .small {
+        font-size: 13px;
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    body {
+        font-size: 14px;
+    }
+
+
+    .card {
+        border-radius: 17px;
+    }
+
+
+    .bottom-nav button {
+        font-size: 10px;
+
+        padding-left: 1px;
+        padding-right: 1px;
+    }
+
+
+    .primary,
+    .secondary {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+
+    .today-item {
+        align-items: flex-start;
+    }
+
+}
+
+
+/* =========================================================
+   ACCESSIBILITY — REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+
+        animation-duration:
+            0.01ms !important;
+
+        animation-iteration-count:
+            1 !important;
+
+        transition-duration:
+            0.01ms !important;
+    }
+
+}
+
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+
+@keyframes blueHeartMessageIn {
+
+    from {
+        opacity: 0;
+        transform:
+            translateY(7px)
+            scale(0.992);
+    }
+
+    to {
+        opacity: 1;
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+}
+
+
+@keyframes blueHeartModalIn {
+
+    from {
+        opacity: 0;
+        transform:
+            translateY(12px)
+            scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+}
