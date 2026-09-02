@@ -12589,3 +12589,32 @@ if (
 /* =========================================================
    END BLUE HEART V6.3 🩵
 ========================================================= */
+/* =========================================================
+   BLUE HEART — FINAL PERSONAL MESSAGES 🩵
+========================================================= */
+
+if (
+    typeof BLUE_HEART_ROSE_MESSAGES !==
+    "undefined"
+) {
+
+    BLUE_HEART_ROSE_MESSAGES.push(
+
+        "You have come so far 🩵",
+
+        "Stars shy at the sight of your brightness ✨",
+
+        "Let's go and live in a paradise 🌷",
+
+        "Movie date after work? 🎬🩵",
+
+        "I love you baby, keep going 🩵"
+
+    );
+
+}
+
+
+/* =========================================================
+   END BLUE HEART FINAL POLISH 🩵
+========================================================= */
