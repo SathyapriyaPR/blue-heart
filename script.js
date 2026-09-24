@@ -1375,6 +1375,7 @@ function renderStudents() {
                 </p>
 
             </div>
+
         `;
 
         return;
@@ -1388,56 +1389,89 @@ function renderStudents() {
             .map(
                 student => `
 
-                    <button
+                    <div
                         class="student-card"
-                        type="button"
-                        data-open-student="${student.id}"
+                        style="
+                            cursor:default;
+                            position:relative;
+                        "
                     >
 
-                        <div class="student-main">
+                        <!-- OPEN STUDENT -->
 
-                            <div class="student-avatar">
-                                ${priorityIcon(
-                                    student.priority
-                                )}
-                            </div>
+                        <button
+                            class="student-open-area"
+                            type="button"
+                            data-open-student="${student.id}"
+                            style="
+                                flex:1;
+                                min-width:0;
+                                border:0;
+                                background:transparent;
+                                padding:0;
+                                margin:0;
+                                text-align:left;
+                                color:inherit;
+                                cursor:pointer;
+                            "
+                        >
 
-                            <div>
+                            <div class="student-main">
 
-                                <strong>
-                                    ${escapeHTML(
-                                        student.name
+                                <div class="student-avatar">
+
+                                    ${priorityIcon(
+                                        student.priority
                                     )}
-                                </strong>
 
-                                <p class="muted">
+                                </div>
 
-                                    ${
-                                        escapeHTML(
-                                            student.className
-                                            ||
-                                            "Class not added"
-                                        )
-                                    }
 
-                                    ${
-                                        student.studentId
-                                            ? " · "
-                                              +
-                                              escapeHTML(
-                                                  student.studentId
-                                              )
-                                            : ""
-                                    }
+                                <div>
 
-                                </p>
+                                    <strong>
+
+                                        ${escapeHTML(
+                                            student.name
+                                        )}
+
+                                    </strong>
+
+
+                                    <p class="muted">
+
+                                        ${
+                                            escapeHTML(
+                                                student.className
+                                                ||
+                                                "Class not added"
+                                            )
+                                        }
+
+                                        ${
+                                            student.studentId
+                                                ? " · "
+                                                  +
+                                                  escapeHTML(
+                                                      student.studentId
+                                                  )
+                                                : ""
+                                        }
+
+                                    </p>
+
+                                </div>
 
                             </div>
 
-                        </div>
+                        </button>
 
 
-                        <span class="student-category">
+                        <!-- CATEGORY -->
+
+                        <span
+                            class="student-category"
+                        >
 
                             ${escapeHTML(
                                 student.category
@@ -1447,15 +1481,35 @@ function renderStudents() {
 
                         </span>
 
-                    </button>
+
+                        <!-- DELETE -->
+
+                        <button
+                            class="text-btn student-delete-button"
+                            type="button"
+                            data-delete-student="${student.id}"
+                            title="Delete student"
+                            aria-label="Delete ${escapeHTML(
+                                student.name
+                            )}"
+                            style="
+                                flex-shrink:0;
+                                margin-left:6px;
+                                color:#3b98d5;
+                            "
+                        >
+
+                            Delete
+
+                        </button>
+
+                    </div>
 
                 `
             )
             .join("");
 
 }
-
-
 /* =========================================================
    STUDENT DETAILS
 ========================================================= */
@@ -5068,7 +5122,390 @@ async function completeQuickNote(
 
 }
 
+/* =========================================================
+   BLUE HEART V7
+   RECORD DELETE FUNCTIONS
+========================================================= */
 
+async function deleteFollowup(id) {
+
+    const followup =
+        appData.followups.find(
+            item => item.id === id
+        );
+
+    if (!followup) {
+
+        showToast(
+            "Follow-up not found"
+        );
+
+        return;
+    }
+
+
+    const student =
+        appData.students.find(
+            item =>
+                item.id ===
+                followup.studentId
+        );
+
+
+    const studentName =
+        student
+            ? student.name
+            : "this student";
+
+
+    const confirmed =
+        window.confirm(
+
+            `Delete this follow-up for ${studentName}?\n\n`
+            +
+            `This will also cancel its reminder.`
+
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        /*
+           Remove background reminder first.
+        */
+
+        if (
+            typeof deleteFollowupReminder ===
+            "function"
+        ) {
+
+            await deleteFollowupReminder(
+                id,
+                {
+                    quiet: true
+                }
+            );
+
+        }
+
+
+        /*
+           Remove local follow-up.
+        */
+
+        appData.followups =
+            appData.followups.filter(
+                item =>
+                    item.id !== id
+            );
+
+
+        await saveData();
+
+
+        renderEverything();
+
+
+        showToast(
+            "Follow-up deleted 🩵"
+        );
+
+    }
+    catch (error) {
+
+        console.error(
+            "Follow-up deletion failed:",
+            error
+        );
+
+
+        showToast(
+            "Couldn't delete follow-up"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DELETE SESSION
+========================================================= */
+
+async function deleteSession(id) {
+
+    const session =
+        appData.sessions.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!session) {
+
+        showToast(
+            "Session not found"
+        );
+
+        return;
+    }
+
+
+    const student =
+        appData.students.find(
+            item =>
+                item.id ===
+                session.studentId
+        );
+
+
+    const studentName =
+        student
+            ? student.name
+            : "this student";
+
+
+    const confirmed =
+        window.confirm(
+
+            `Delete this counselling session for ${studentName}?`
+
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        appData.sessions =
+            appData.sessions.filter(
+                item =>
+                    item.id !== id
+            );
+
+
+        await saveData();
+
+
+        renderEverything();
+
+
+        showToast(
+            "Session deleted 🩵"
+        );
+
+    }
+    catch (error) {
+
+        console.error(
+            "Session deletion failed:",
+            error
+        );
+
+
+        showToast(
+            "Couldn't delete session"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DELETE STUDENT
+========================================================= */
+
+async function deleteStudent(id) {
+
+    const student =
+        appData.students.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!student) {
+
+        showToast(
+            "Student not found"
+        );
+
+        return;
+    }
+
+
+    const studentName =
+        student.name ||
+        "this student";
+
+
+    const studentSessions =
+        appData.sessions.filter(
+            item =>
+                item.studentId === id
+        );
+
+
+    const studentFollowups =
+        appData.followups.filter(
+            item =>
+                item.studentId === id
+        );
+
+
+    const confirmed =
+        window.confirm(
+
+            `Delete ${studentName}?\n\n`
+            +
+            `${studentSessions.length} session(s) and `
+            +
+            `${studentFollowups.length} follow-up(s) `
+            +
+            `will also be removed.\n\n`
+            +
+            `This cannot be undone.`
+
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        /*
+           Cancel background reminders.
+        */
+
+        for (
+            const followup
+            of studentFollowups
+        ) {
+
+            if (
+                typeof deleteFollowupReminder ===
+                "function"
+            ) {
+
+                await deleteFollowupReminder(
+                    followup.id,
+                    {
+                        quiet: true
+                    }
+                );
+
+            }
+
+        }
+
+
+        /*
+           Remove student.
+        */
+
+        appData.students =
+            appData.students.filter(
+                item =>
+                    item.id !== id
+            );
+
+
+        /*
+           Remove sessions.
+        */
+
+        appData.sessions =
+            appData.sessions.filter(
+                item =>
+                    item.studentId !== id
+            );
+
+
+        /*
+           Remove follow-ups.
+        */
+
+        appData.followups =
+            appData.followups.filter(
+                item =>
+                    item.studentId !== id
+            );
+
+
+        /*
+           Remove quick notes attached
+           to this student.
+        */
+
+        if (
+            Array.isArray(
+                appData.quickNotes
+            )
+        ) {
+
+            appData.quickNotes =
+                appData.quickNotes.filter(
+                    note =>
+                        note.studentId !== id
+                );
+
+        }
+
+
+        /*
+           Clear selected student if needed.
+        */
+
+        if (
+            typeof selectedStudentId !==
+            "undefined"
+            &&
+            selectedStudentId === id
+        ) {
+
+            selectedStudentId = null;
+
+        }
+
+
+        await saveData();
+
+
+        renderEverything();
+
+
+        showToast(
+            `${studentName} deleted 🩵`
+        );
+
+    }
+    catch (error) {
+
+        console.error(
+            "Student deletion failed:",
+            error
+        );
+
+
+        showToast(
+            "Couldn't delete student"
+        );
+
+    }
+
+}
 /* =========================================================
    DELETE QUICK NOTE
 ========================================================= */
@@ -12893,4 +13330,149 @@ blueHeartEmojiObserver.observe(
 
 /* =========================================================
    END EMOJI POLISH 🩵
+========================================================= */
+/* =========================================================
+   BLUE HEART V7
+   DELETE BUTTONS
+========================================================= */
+
+
+/* =========================================================
+   STUDENT DELETE BUTTON
+========================================================= */
+
+document.addEventListener(
+    "click",
+    async function (event) {
+
+        const button =
+            event.target.closest(
+                "[data-delete-student]"
+            );
+
+        if (!button) {
+            return;
+        }
+
+
+        event.preventDefault();
+        event.stopPropagation();
+
+
+        const studentId =
+            button.dataset.deleteStudent;
+
+
+        if (!studentId) {
+
+            showToast(
+                "Student ID missing"
+            );
+
+            return;
+
+        }
+
+
+        await deleteStudent(
+            studentId
+        );
+
+    }
+);
+
+
+/* =========================================================
+   FOLLOW-UP DELETE BUTTON
+========================================================= */
+
+document.addEventListener(
+    "click",
+    async function (event) {
+
+        const button =
+            event.target.closest(
+                "[data-delete-followup]"
+            );
+
+        if (!button) {
+            return;
+        }
+
+
+        event.preventDefault();
+        event.stopPropagation();
+
+
+        const followupId =
+            button.dataset.deleteFollowup;
+
+
+        if (!followupId) {
+
+            showToast(
+                "Follow-up ID missing"
+            );
+
+            return;
+
+        }
+
+
+        await deleteFollowup(
+            followupId
+        );
+
+    }
+);
+
+
+/* =========================================================
+   SESSION DELETE BUTTON
+========================================================= */
+
+document.addEventListener(
+    "click",
+    async function (event) {
+
+        const button =
+            event.target.closest(
+                "[data-delete-session]"
+            );
+
+        if (!button) {
+            return;
+        }
+
+
+        event.preventDefault();
+        event.stopPropagation();
+
+
+        const sessionId =
+            button.dataset.deleteSession;
+
+
+        if (!sessionId) {
+
+            showToast(
+                "Session ID missing"
+            );
+
+            return;
+
+        }
+
+
+        await deleteSession(
+            sessionId
+        );
+
+    }
+);
+
+
+/* =========================================================
+   BLUE HEART V7
+   END DELETE BUTTON HANDLERS
 ========================================================= */
