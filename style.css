@@ -4878,3 +4878,38 @@ h3 .blueheart-emoji {
     }
 
 }
+/* =========================================================
+   BLUE HEART V7 — STUDENT DELETE BUTTON
+========================================================= */
+
+.student-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.student-open-area {
+    display: block;
+}
+
+.student-delete-button {
+    white-space: nowrap;
+    opacity: 0.75;
+}
+
+.student-delete-button:hover {
+    opacity: 1;
+    background: rgba(224, 244, 255, 0.8);
+}
+
+@media (max-width: 600px) {
+
+    .student-delete-button {
+        min-height: 40px;
+        padding-left: 9px;
+        padding-right: 9px;
+        font-size: 12px;
+    }
+
+}
