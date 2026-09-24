@@ -13476,3 +13476,247 @@ document.addEventListener(
    BLUE HEART V7
    END DELETE BUTTON HANDLERS
 ========================================================= */
+/* =========================================================
+   BLUE HEART V8
+   ACTIVITY HISTORY
+========================================================= */
+
+function addActivityLog(
+    action,
+    details = {}
+) {
+
+    if (
+        !Array.isArray(
+            appData.activityLog
+        )
+    ) {
+
+        appData.activityLog = [];
+
+    }
+
+
+    appData.activityLog.push({
+
+        id:
+            "activity_" +
+            Date.now() +
+            "_" +
+            Math.random()
+                .toString(36)
+                .slice(2, 8),
+
+        timestamp:
+            new Date().toISOString(),
+
+        action:
+            String(action || "Unknown"),
+
+        details:
+            details || {}
+
+    });
+
+
+    /*
+       Keep the history manageable.
+       The newest 1000 events are retained.
+    */
+
+    if (
+        appData.activityLog.length >
+        1000
+    ) {
+
+        appData.activityLog =
+            appData.activityLog.slice(
+                -1000
+            );
+
+    }
+
+}
+
+
+/* =========================================================
+   READABLE ACTIVITY TEXT
+========================================================= */
+
+function activityText(
+    activity
+) {
+
+    if (!activity) {
+        return "Activity recorded";
+    }
+
+
+    const details =
+        activity.details || {};
+
+
+    const student =
+        details.studentName
+        ||
+        details.student
+        ||
+        "";
+
+
+    switch (
+        activity.action
+    ) {
+
+        case "STUDENT_ADDED":
+
+            return student
+                ? `Student added — ${student}`
+                : "Student added";
+
+
+        case "STUDENT_EDITED":
+
+            return student
+                ? `Student edited — ${student}`
+                : "Student edited";
+
+
+        case "STUDENT_DELETED":
+
+            return student
+                ? `Student deleted — ${student}`
+                : "Student deleted";
+
+
+        case "FOLLOWUP_ADDED":
+
+            return student
+                ? `Follow-up added — ${student}`
+                : "Follow-up added";
+
+
+        case "FOLLOWUP_EDITED":
+
+            return student
+                ? `Follow-up edited — ${student}`
+                : "Follow-up edited";
+
+
+        case "FOLLOWUP_COMPLETED":
+
+            return student
+                ? `Follow-up completed — ${student}`
+                : "Follow-up completed";
+
+
+        case "FOLLOWUP_DELETED":
+
+            return student
+                ? `Follow-up deleted — ${student}`
+                : "Follow-up deleted";
+
+
+        case "SESSION_ADDED":
+
+            return student
+                ? `Counselling session added — ${student}`
+                : "Counselling session added";
+
+
+        case "SESSION_EDITED":
+
+            return student
+                ? `Counselling session edited — ${student}`
+                : "Counselling session edited";
+
+
+        case "SESSION_DELETED":
+
+            return student
+                ? `Counselling session deleted — ${student}`
+                : "Counselling session deleted";
+
+
+        case "NOTE_ADDED":
+
+            return "Quick note added";
+
+
+        case "NOTE_EDITED":
+
+            return "Quick note edited";
+
+
+        case "NOTE_DELETED":
+
+            return "Quick note deleted";
+
+
+        case "BACKUP_CREATED":
+
+            return "Backup created";
+
+
+        case "DATA_IMPORTED":
+
+            return "Backup imported";
+
+
+        default:
+
+            return (
+                activity.action ||
+                "Activity recorded"
+            );
+
+    }
+
+}
+
+
+/* =========================================================
+   FORMAT ACTIVITY DATE
+========================================================= */
+
+function formatActivityDate(
+    timestamp
+) {
+
+    if (!timestamp) {
+        return "";
+    }
+
+
+    const date =
+        new Date(timestamp);
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return "";
+
+    }
+
+
+    return date.toLocaleString(
+        "en-IN",
+        {
+            dateStyle:
+                "medium",
+
+            timeStyle:
+                "short"
+        }
+    );
+
+}
+
+
+/* =========================================================
+   END ACTIVITY HISTORY STORAGE
+========================================================= */
